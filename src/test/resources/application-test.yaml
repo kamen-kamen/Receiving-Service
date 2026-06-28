@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: receiving-service
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false                    # отключаем встроенный show-sql (чтобы не было дублей)
+    properties:
+      hibernate:
+        format_sql: true
+
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+
+      properties:
+        spring.json.add.type.headers: true # Добавляет инфу о классе в заголовки (важно для десериализации)
+
+security:
+  jwt:
+    secret: "vZWtIb0AUbrMiSNB1tL+EzavlbQ9gpEgQpYxlLs1FuA"
+    expiration: 43_200_000 # 12h
+
+logging:
+    group:
+      kafka:
+        - org.springframework.kafka
+        - org.apache.kafka.clients.producer
+      web:
+      - org.springframework.web
+      - org.springframework.web.servlet
+      - com.waregang.receiving_service.controller
+      db:
+#      - org.hibernate.SQL
+#      - org.springframework.transaction
+      - org.springframework.jdbc.core
+      security:
+      - org.springframework.security
+      - com.waregang.receiving_service.security
+      - com.waregang.receiving_service.filter
+      test-ctx:
+      - org.springframework.test
+      - org.springframework.boot.test
+      - org.springframework.context
+      - org.springframework.beans
+      cache:
+      - io.lettuce.core
+
+    level:
+      web: off
+      db: debug
+      security: off
+      test-ctx: off
+      cache: off
+      kafka: debug
+
+      org.hibernate.SQL: DEBUG           # выводит сам SQL-запрос
+      org.hibernate.orm.jdbc.bind: TRACE # выводит реальные значения параметров (вместо ?)
+      org.springframework.transaction: INFO  # убирает шум от транзакций
