@@ -15,11 +15,6 @@ import com.waregang.receiving_service.receiving_process.infrastructure.GoodsRece
 import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedContentRepository;
 import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedUnitRepository;
 import com.waregang.receiving_service.receiving_process.infrastructure.WorkerReceivingSessionRepository;
-import com.waregang.receiving_service.security.User;
-import com.waregang.receiving_service.security.UserPrincipal;
-import com.waregang.receiving_service.security.UserRepository;
-import com.waregang.receiving_service.security.api.dto.RegisterUserRequest;
-import com.waregang.receiving_service.security.application.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,8 +32,6 @@ public class ReceivingFullFlowIT extends BaseIT {
     @Autowired private WorkerReceivingSessionRepository sessionRepository;
     @Autowired private ReceivedUnitRepository receivedUnitRepository;
     @Autowired private ReceivedContentRepository receivedContentRepository;
-    @Autowired private AuthService authService;
-    @Autowired private UserRepository userRepository;
 
     @Test
     @DisplayName("Full Happy Path: Open Receipt -> Join Worker -> Scan Nested Tree -> Close")
@@ -47,47 +40,32 @@ public class ReceivingFullFlowIT extends BaseIT {
         InboundDelivery delivery = DeliveryMother.withNestedTree();
         inboundDeliveryRepository.save(delivery);
 
-        // 1.1. Регистрируем пользователей через AuthService, чтобы они гарантированно попали в БД
-        var managerRequest = new RegisterUserRequest("manager", delivery.getWarehouseId(), "manager@test.com", "password");
-        authService.registerBoxManager(managerRequest);
-
-        var workerRequest = new RegisterUserRequest("worker", delivery.getWarehouseId(), "worker@test.com", "password");
-        authService.registerBoxCat(workerRequest);
-
-        // 1.2. Получаем пользователей из "контекста" (БД)
-        User managerEntity = userRepository.findByEmail("manager@test.com").orElseThrow();
-        User workerEntity = userRepository.findByEmail("worker@test.com").orElseThrow();
-
-        // 1.3. Создаем UserPrincipal из реальных, сохраненных сущностей
-        UserPrincipal manager = UserPrincipal.from(managerEntity);
-        UserPrincipal worker = UserPrincipal.from(workerEntity);
-
         // --- 2. WHEN ---
 
         // 2.1. Менеджер открывает приёмку по номеру ASN
         var startRequest = new StartReceivingRequest(delivery.getAsnNumber(), "GATE-01");
 
-        var startResponse = goodsReceiptService.startReceiving(startRequest, manager);
+        var startResponse = goodsReceiptService.startReceiving(startRequest, managerPrincipal);
         UUID receiptId = startResponse.receiptId();
 
         // 2.2. Воркер подключается (в сервисе создается WorkerReceivingSession)
-        receivingProcessService.joinReceiving(worker, receiptId);
+        receivingProcessService.joinReceiving(workerPrincipal, receiptId);
 
         // 2.3. Скан паллеты
-        receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("PALLET-01"), worker);
+        receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("PALLET-01"), workerPrincipal);
 
         // 2.4. Скан коробки (вложенность должна определиться внутри сервиса по текущему юниту в сессии)
-        receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("BOX-01"), worker);
+        receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("BOX-01"), workerPrincipal);
 
         // 2.5. Скан товара в последнюю отсканированную коробку
         var scanContentReq = new ScanContentRequest("SKU-123", 100);
-        receivingProcessService.scanContent(scanContentReq, worker);
+        receivingProcessService.scanContent(scanContentReq, workerPrincipal);
 
         // 2.6. Воркер завершает свою часть работы
-        receivingProcessService.completeWorkerSession(worker);
+        receivingProcessService.completeWorkerSession(workerPrincipal);
 
         // 2.7. Менеджер закрывает акт приемки целиком
-        goodsReceiptService.closeReceiving(manager, receiptId);
+        goodsReceiptService.closeReceiving(managerPrincipal, receiptId);
 
         // --- 3. THEN ---
 
@@ -107,7 +85,7 @@ public class ReceivingFullFlowIT extends BaseIT {
 
         // Проверяем сессию через
         WorkerReceivingSession session = sessionRepository.findAll().stream()
-                .filter(s -> s.getWorkerId().equals(worker.id()))
+                .filter(s -> s.getWorkerId().equals(workerPrincipal.id()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Сессия воркера не найдена"));
         assertThat(session.getStatus()).isEqualTo(WorkerReceivingSessionStatus.COMPLETED);

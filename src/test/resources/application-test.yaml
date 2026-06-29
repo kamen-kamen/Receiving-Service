@@ -4,8 +4,8 @@ spring:
 
   security:
     jwt:
-      secret: ${JWT_SECRET}
-      expiration: ${JWT_EXPIRATION}
+      secret: "test-secret-key-for-unit-tests-that-is-at-least-32-characters-long"
+      expiration: 86400000
 
   jpa:
     hibernate:
@@ -56,11 +56,11 @@ logging:
 
     level:
       web: off
-      db: debug
-      security: off
+      db: off
+      security: trace
       test-ctx: off
       cache: off
-      kafka: debug
+      kafka: off
 
       org.hibernate.SQL: DEBUG           # выводит сам SQL-запрос
       org.hibernate.orm.jdbc.bind: TRACE # выводит реальные значения параметров (вместо ?)

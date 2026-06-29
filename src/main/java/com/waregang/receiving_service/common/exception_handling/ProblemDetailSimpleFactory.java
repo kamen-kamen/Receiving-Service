@@ -4,6 +4,7 @@ import com.waregang.receiving_service.common.exception_handling.error_code.Error
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,8 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+@Slf4j
 
 @Component
 @RequiredArgsConstructor
@@ -73,6 +76,7 @@ public class ProblemDetailSimpleFactory {
                 "Authentication failed",
                 authenticationException.getMessage()
         );
+
     }
 
     public ProblemDetail create(Exception e) {

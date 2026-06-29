@@ -1,45 +1,53 @@
 package com.waregang.receiving_service.common.exception_handling;
 
-import com.waregang.receiving_service.BaseIT;
+import com.waregang.receiving_service.integration.IntegrationTestConfig;
+import com.waregang.receiving_service.security.api.AuthController;
 import com.waregang.receiving_service.security.application.AuthService;
 import com.waregang.receiving_service.security.api.dto.AuthenticationRequest;
-import com.waregang.receiving_service.security.api.dto.RegisterUserRequest;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@AutoConfigureMockMvc
-public class AuthExceptionHandlingIT extends BaseIT {
+@WebMvcTest(controllers = AuthController.class)
+@AutoConfigureMockMvc(addFilters = false)
 
-    @Autowired
-    JsonMapper jsonMapper;
-    @Autowired
-    private AuthService authService;
+@ActiveProfiles("test")
+@Import(IntegrationTestConfig.class)
+public class AuthExceptionHandlingIT {
+
     @Autowired
     private MockMvcTester mockMvcTester;
+
+    @Autowired
+    private JsonMapper jsonMapper;
+
+    @MockitoBean
+    private AuthService authService;
 
     @Test
     @DisplayName("Should return Problem Detail for unauthorized")
     void shouldReturn401when() {
+        // GIVEN: Настраиваем мок, чтобы он выбрасывал исключение, как будто пароль неверный
+        when(authService.authenticate(any(AuthenticationRequest.class)))
+                .thenThrow(new BadCredentialsException("Bad credentials"));
 
-        authService.registerBoxCat(new RegisterUserRequest(
-                "nickname",
-                UUID.randomUUID().toString(),
-                "existing@gmail.com",
-                "password"));
-
+        // WHEN & THEN
         var body = assertThat(mockMvcTester.post().with(csrf())
                 .uri("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -52,7 +60,6 @@ public class AuthExceptionHandlingIT extends BaseIT {
         body.extractingPath("$.status").isEqualTo(401);
         body.extractingPath("$.detail").isEqualTo("Bad credentials");
         body.extractingPath("$.instance").isEqualTo("/api/auth/login");
-
         body.extractingPath("$.timestamp").isNotNull();
     }
 

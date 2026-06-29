@@ -5,12 +5,14 @@ import com.waregang.receiving_service.fixtures.delivery.DeliveryMother;
 import com.waregang.receiving_service.fixtures.delivery.InboundDeliveryBuilder;
 import com.waregang.receiving_service.fixtures.receiving.ReceivingMother;
 import com.waregang.receiving_service.fixtures.receiving.WorkerSessionBuilder;
-import com.waregang.receiving_service.fixtures.user.UserMother;
 import com.waregang.receiving_service.inbound_delivery.domain.model.InboundDelivery;
 import com.waregang.receiving_service.inbound_delivery.infrastructure.InboundDeliveryRepository;
 import com.waregang.receiving_service.receiving_process.api.dto.ScanContentRequest;
 import com.waregang.receiving_service.receiving_process.api.dto.ScanHandlingUnitRequest;
-import com.waregang.receiving_service.receiving_process.domain.model.*;
+import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceipt;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContent;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnit;
+import com.waregang.receiving_service.receiving_process.domain.model.WorkerReceivingSession;
 import com.waregang.receiving_service.receiving_process.infrastructure.GoodsReceiptRepository;
 import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedContentRepository;
 import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedUnitRepository;
@@ -18,9 +20,7 @@ import com.waregang.receiving_service.receiving_process.infrastructure.WorkerRec
 import com.waregang.receiving_service.integration.infrastrusture.dto.SkuQuantityDto;
 import com.waregang.receiving_service.security.User;
 import com.waregang.receiving_service.security.UserPrincipal;
-import com.waregang.receiving_service.security.UserRepository;
 import com.waregang.receiving_service.security.api.dto.RegisterUserRequest;
-import com.waregang.receiving_service.security.application.AuthService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,9 +46,6 @@ class RepositoryQueryIT extends BaseIT {
     @Autowired private ReceivedContentRepository receivedContentRepository;
     @PersistenceContext EntityManager entityManager;
 
-    @Autowired private UserRepository userRepository;
-    @Autowired private AuthService authService;
-
     private InboundDelivery delivery;
     private GoodsReceipt receipt;
     private WorkerReceivingSession session;
@@ -59,22 +56,12 @@ class RepositoryQueryIT extends BaseIT {
         delivery = DeliveryMother.withNestedTree();
         deliveryRepository.save(delivery);
 
-        // Register users in DB
-        authService.registerBoxManager(new RegisterUserRequest("manager", delivery.getWarehouseId(), "manager@test.com", "password"));
-        authService.registerBoxCat(new RegisterUserRequest("worker", delivery.getWarehouseId(), "worker@test.com", "password"));
-
-        User managerEntity = userRepository.findByEmail("manager@test.com").orElseThrow();
-        User workerEntity = userRepository.findByEmail("worker@test.com").orElseThrow();
-
-        UserPrincipal manager = UserPrincipal.from(managerEntity);
-        UserPrincipal worker = UserPrincipal.from(workerEntity);
-
         receipt = ReceivingMother.receipt(delivery);
         receiptRepository.save(receipt);
         receiptId = receipt.getId();
 
         session = WorkerSessionBuilder.aSession(receipt)
-                .withWorker(worker)
+                .withWorker(workerPrincipal)
                 .build();
         sessionRepository.save(session);
     }
@@ -111,6 +98,12 @@ class RepositoryQueryIT extends BaseIT {
     @Test
     @DisplayName("Should not mix quantities between different receipts")
     void shouldNotMixQuantitiesBetweenReceipts() {
+        // Создаем второго, уникального воркера для этого теста
+        var otherWorkerRequest = new RegisterUserRequest("other_worker", "WH-001", "other_worker@test.com", "password");
+        User otherWorker = User.createBoxCat(otherWorkerRequest, passwordEncoder.encode(otherWorkerRequest.password()));
+        userRepository.save(otherWorker);
+        UserPrincipal otherWorkerPrincipal = UserPrincipal.from(otherWorker);
+
         // Другая приёмка с другой сессией
         InboundDelivery otherDelivery = InboundDeliveryBuilder.aDelivery()
                 .withAsn("ASN-OTHER-01")
@@ -120,7 +113,9 @@ class RepositoryQueryIT extends BaseIT {
         GoodsReceipt otherReceipt = ReceivingMother.receipt(otherDelivery);
         receiptRepository.save(otherReceipt);
 
-        WorkerReceivingSession otherSession = ReceivingMother.session(otherReceipt);
+        WorkerReceivingSession otherSession = WorkerSessionBuilder.aSession(otherReceipt)
+                .withWorker(otherWorkerPrincipal)
+                .build();
         sessionRepository.save(otherSession);
 
         // Сканируем в обе приёмки

@@ -2,7 +2,6 @@ package com.waregang.receiving_service.integration.inventory_service;
 
 import com.waregang.receiving_service.BaseIT;
 import com.waregang.receiving_service.fixtures.delivery.DeliveryMother;
-import com.waregang.receiving_service.fixtures.user.UserMother;
 import com.waregang.receiving_service.inbound_delivery.domain.model.InboundDelivery;
 import com.waregang.receiving_service.inbound_delivery.infrastructure.InboundDeliveryRepository;
 import com.waregang.receiving_service.integration.infrastrusture.dto.ForwardPutAwayRequest;
@@ -11,12 +10,6 @@ import com.waregang.receiving_service.receiving_process.api.dto.ScanHandlingUnit
 import com.waregang.receiving_service.receiving_process.api.dto.StartReceivingRequest;
 import com.waregang.receiving_service.receiving_process.application.GoodsReceiptService;
 import com.waregang.receiving_service.receiving_process.application.ReceivingProcessService;
-import com.waregang.receiving_service.security.UserPrincipal;
-import com.waregang.receiving_service.security.User;
-import com.waregang.receiving_service.security.UserPrincipal;
-import com.waregang.receiving_service.security.UserRepository;
-import com.waregang.receiving_service.security.api.dto.RegisterUserRequest;
-import com.waregang.receiving_service.security.application.AuthService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,8 +30,6 @@ class InventoryKafkaAdapterIT extends BaseIT {
     @Autowired private InboundDeliveryRepository inboundDeliveryRepository;
     @Autowired private InventoryKafkaTestConsumer testConsumer;
     @Autowired private JsonMapper jsonMapper; // Для десериализации ответа из Kafka
-    @Autowired private AuthService authService;
-    @Autowired private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
@@ -50,24 +41,20 @@ class InventoryKafkaAdapterIT extends BaseIT {
     void shouldEmitIntegrationEventWithCorrectData() {
         // 1. GIVEN: Подготовка данных через Mother
         InboundDelivery delivery = inboundDeliveryRepository.save(DeliveryMother.withNestedTree());
-        authService.registerBoxManager(new RegisterUserRequest("manager8", delivery.getWarehouseId(), "manager8@test.com", "password"));
-        authService.registerBoxCat(new RegisterUserRequest("worker8", delivery.getWarehouseId(), "worker8@test.com", "password"));
-        UserPrincipal manager = UserPrincipal.from(userRepository.findByEmail("manager8@test.com").orElseThrow());
-        UserPrincipal worker = UserPrincipal.from(userRepository.findByEmail("worker8@test.com").orElseThrow());
 
         // Проходим минимальный цикл приемки
         UUID receiptId = goodsReceiptService.startReceiving(
-                new StartReceivingRequest(delivery.getAsnNumber(), "GATE-01"), manager
+                new StartReceivingRequest(delivery.getAsnNumber(), "GATE-01"), managerPrincipal
         ).receiptId();
 
-        var workerSessionId = receivingProcessService.joinReceiving(worker, receiptId).workerSessionId();
-        receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("PALLET-01"), worker);
-        receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("BOX-01"), worker);
-        receivingProcessService.scanContent(new ScanContentRequest("SKU-123", 100), worker);
-        receivingProcessService.completeWorkerSession(worker);
+        var workerSessionId = receivingProcessService.joinReceiving(workerPrincipal, receiptId).workerSessionId();
+        receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("PALLET-01"), workerPrincipal);
+        receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("BOX-01"), workerPrincipal);
+        receivingProcessService.scanContent(new ScanContentRequest("SKU-123", 100), workerPrincipal);
+        receivingProcessService.completeWorkerSession(workerPrincipal);
 
         // 2. WHEN: Триггер события — закрытие приемки менеджером
-        goodsReceiptService.closeReceiving(manager, receiptId);
+        goodsReceiptService.closeReceiving(managerPrincipal, receiptId);
 
     // 3. THEN:
         await()
