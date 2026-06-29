@@ -16,12 +16,41 @@ spring:
         spring.json.add.type.headers: false
 
 logging:
+  group:
+    spring-context:
+      - org.springframework.context
+      - org.springframework.beans
+      - org.springframework.boot.autoconfigure
+    web:
+      - org.springframework.web
+      - org.springframework.web.servlet.DispatcherServlet
+      - org.springframework.web.servlet.mvc.method.annotation
+    security:
+      - org.springframework.security
+      - com.waregang.receiving_service.security
+    db:
+      - org.hibernate.SQL
+      - org.hibernate.orm.jdbc.bind
+      - org.springframework.transaction
+      - org.flywaydb
+    kafka:
+      - org.springframework.kafka
+      - org.apache.kafka.clients
+
   level:
-    root: info
+    # Твой код всегда debug
     com.waregang: DEBUG
-    org.hibernate.SQL: DEBUG
-  pattern:
-    console: "%d{HH:mm:ss} [%thread] %-5level %logger{36} [%X{receiptId}] - %msg%n"
+
+    # Группы — включаешь нужное, остальное off
+    spring-context: off
+    web: debug
+    security: debug
+    db: debug
+    kafka: debug
+
+pattern:
+  console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n%ex{full}"
+
 
 springdoc:
   api-docs:

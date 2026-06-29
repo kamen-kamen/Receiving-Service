@@ -1,6 +1,8 @@
 spring:
   application:
     name: receiving-service
+    profiles:
+      active: dev
 
   # profiles.active НЕ задаём здесь — передаём через env явно
   threads:

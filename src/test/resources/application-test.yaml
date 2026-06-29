@@ -2,10 +2,15 @@ spring:
   application:
     name: receiving-service
 
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      expiration: ${JWT_EXPIRATION}
+
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: false                    # отключаем встроенный show-sql (чтобы не было дублей)
+      ddl-auto: validate
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -23,10 +28,6 @@ spring:
       properties:
         spring.json.add.type.headers: true # Добавляет инфу о классе в заголовки (важно для десериализации)
 
-security:
-  jwt:
-    secret: "vZWtIb0AUbrMiSNB1tL+EzavlbQ9gpEgQpYxlLs1FuA"
-    expiration: 43_200_000 # 12h
 
 logging:
     group:
