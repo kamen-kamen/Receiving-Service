@@ -96,7 +96,6 @@ public class InboundDelivery extends AbstractAggregateRoot<InboundDelivery> impl
         }
 
         this.status = InboundDeliveryStatus.CLOSED;
-        // extra logic idk what is required
     }
 
     @Override

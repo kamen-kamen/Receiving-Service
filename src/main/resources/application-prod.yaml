@@ -1,5 +1,29 @@
 spring:
   security:
     jwt:
-      secret: "vZWtIb0AUbrMiSNB1tL+EzavlbQ9gpEgQpYxlLs1FuA"
-      expiration: 43200000
+      secret: ${JWT_SECRET}
+      expiration: ${JWT_EXPIRATION:43200000}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        retry.backoff.ms: 1000
+        spring.json.add.type.headers: false
+
+logging:
+  level:
+    root: warn
+    com.waregang: info
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} [%X{receiptId}] - %msg%n"
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: receiving-service
+
+  # profiles.active НЕ задаём здесь — передаём через env явно
+  threads:
+    virtual:
+      enabled: true
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    table: flyway_schema_history
+#    baseline-on-migrate: true
+
+  mvc:
+    problemdetails:
+      enabled: true

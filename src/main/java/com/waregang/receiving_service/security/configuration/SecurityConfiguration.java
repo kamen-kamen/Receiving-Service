@@ -1,6 +1,5 @@
 package com.waregang.receiving_service.security.configuration;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -20,7 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 @EnableConfigurationProperties(JwtProperties.class)
 
-@Profile("prod")
+@Profile({"prod", "dev"})
 @Configuration
 public class SecurityConfiguration {
     private final JwtAuthenticationFilter jwtAuthFilter;

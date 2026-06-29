@@ -20,7 +20,7 @@ public class GoodsReceiptEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onGoodsReceiptClosedEvent (ClosedGoodsReceiptEvent event) {
-        reportService.processClosedEvent(event);
         deliveryService.closeDelivery(event);
+        reportService.processClosedEvent(event);
     }
 }

@@ -11,4 +11,14 @@ public record UserPrincipal(
         String username,
         String warehouseId,
         List<SimpleGrantedAuthority> authorities
-) {}
+) {
+    public static UserPrincipal from(User user) {
+        return new UserPrincipal(
+                user.getId(),
+                user.getNickname(),
+                user.getEmail(),
+                user.getWarehouseId(),
+                List.of(new SimpleGrantedAuthority(user.getAuthority().name()))
+        );
+    }
+}

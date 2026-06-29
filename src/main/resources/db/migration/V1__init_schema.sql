@@ -76,11 +76,8 @@ create table if not exists goods_receipts (
     receiving_status     varchar(255) not null,
 
     constraint pk_goods_receipts primary key (id),
-    constraint chk_goods_receipts_status check (receiving_status in ('OPEN', 'CLOSED')),
     constraint fk_goods_receipts_inbound_delivery
-    foreign key (inbound_delivery_id) references inbound_deliveries (id),
-    constraint fk_goods_receipts_manager
-    foreign key (manager_id) references users (id)
+    foreign key (inbound_delivery_id) references inbound_deliveries (id)
     );
 
 create index if not exists idx_goods_receipts_inbound_delivery_id on goods_receipts (inbound_delivery_id);
@@ -99,8 +96,6 @@ create table if not exists worker_receiving_sessions (
 
     constraint pk_worker_receiving_sessions primary key (id),
     constraint uq_worker_active_session unique (worker_id, worker_receiving_session_status),
-    constraint chk_wrs_receiving_mode check (receiving_mode in ('ASN_MATCHING')),
-    constraint chk_wrs_status check (worker_receiving_session_status in ('COMPLETED', 'IN_PROCESS')),
     constraint fk_wrs_inbound_delivery
     foreign key (inbound_delivery_id) references inbound_deliveries (id),
     constraint fk_wrs_worker

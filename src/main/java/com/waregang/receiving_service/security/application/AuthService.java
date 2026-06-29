@@ -43,4 +43,11 @@ public class AuthService {
         User user = User.createBoxCat(request, encodedPassword);
         userRepository.save(user);
     }
+
+    @Transactional
+    public void registerBoxManager(RegisterUserRequest request) {
+        String encodedPassword = passwordEncoder.encode(request.password());
+        User user = User.createBoxManager(request, encodedPassword);
+        userRepository.save(user);
+    }
 }

@@ -40,15 +40,32 @@ public class User implements UserDetails {
     @Column(name = "warehouseId", nullable = false) @Getter
     private String warehouseId;
 
+    private User(RegisterUserRequest request,
+                 String encodedPassword,
+                 Authority authority
+    ) {
+        this.id = IdGenerator.generate();
+        this.nickname = request.nickname();
+        this.password = encodedPassword;
+        this.email = request.email();
+        this.authority = authority;
+        this.warehouseId = request.warehouseId();
+    }
+
     public static User createBoxCat(RegisterUserRequest request, String encodedPassword) {
-        User user = new User();
-        user.id = IdGenerator.generate();
-        user.nickname = request.nickname();
-        user.password = encodedPassword;
-        user.email = request.email();
-        user.authority = Authority.BOX_CAT;
-        user.warehouseId = request.warehouseId();
-        return user;
+        return new User(
+                request,
+                encodedPassword,
+                Authority.BOX_CAT
+        );
+    }
+
+    public static User createBoxManager(RegisterUserRequest request, String encodedPassword) {
+        return new User(
+                request,
+                encodedPassword,
+                Authority.BOX_MANAGER
+        );
     }
 
     @Override

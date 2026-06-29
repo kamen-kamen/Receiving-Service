@@ -65,5 +65,6 @@ public class InboundDeliveryService {
                          .with("inbound_delivery_id", event.inboundDeliveryId()));
 
          delivery.close();
+         inboundDeliveryRepository.save(delivery);
     }
 }

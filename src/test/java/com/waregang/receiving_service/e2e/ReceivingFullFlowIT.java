@@ -2,7 +2,6 @@ package com.waregang.receiving_service.e2e;
 
 import com.waregang.receiving_service.BaseIT;
 import com.waregang.receiving_service.fixtures.delivery.DeliveryMother;
-import com.waregang.receiving_service.fixtures.user.UserMother;
 import com.waregang.receiving_service.inbound_delivery.domain.model.InboundDelivery;
 import com.waregang.receiving_service.inbound_delivery.domain.model.InboundDeliveryStatus;
 import com.waregang.receiving_service.inbound_delivery.infrastructure.InboundDeliveryRepository;
@@ -16,7 +15,11 @@ import com.waregang.receiving_service.receiving_process.infrastructure.GoodsRece
 import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedContentRepository;
 import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedUnitRepository;
 import com.waregang.receiving_service.receiving_process.infrastructure.WorkerReceivingSessionRepository;
+import com.waregang.receiving_service.security.User;
 import com.waregang.receiving_service.security.UserPrincipal;
+import com.waregang.receiving_service.security.UserRepository;
+import com.waregang.receiving_service.security.api.dto.RegisterUserRequest;
+import com.waregang.receiving_service.security.application.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,17 +37,30 @@ public class ReceivingFullFlowIT extends BaseIT {
     @Autowired private WorkerReceivingSessionRepository sessionRepository;
     @Autowired private ReceivedUnitRepository receivedUnitRepository;
     @Autowired private ReceivedContentRepository receivedContentRepository;
+    @Autowired private AuthService authService;
+    @Autowired private UserRepository userRepository;
 
     @Test
     @DisplayName("Full Happy Path: Open Receipt -> Join Worker -> Scan Nested Tree -> Close")
     void fullHappyPath_shouldCompleteSuccessfully() {
         // --- 1. GIVEN ---
         InboundDelivery delivery = DeliveryMother.withNestedTree();
-
         inboundDeliveryRepository.save(delivery);
 
-        UserPrincipal manager = UserMother.manager();
-        UserPrincipal worker = UserMother.worker(delivery.getWarehouseId());
+        // 1.1. Регистрируем пользователей через AuthService, чтобы они гарантированно попали в БД
+        var managerRequest = new RegisterUserRequest("manager", delivery.getWarehouseId(), "manager@test.com", "password");
+        authService.registerBoxManager(managerRequest);
+
+        var workerRequest = new RegisterUserRequest("worker", delivery.getWarehouseId(), "worker@test.com", "password");
+        authService.registerBoxCat(workerRequest);
+
+        // 1.2. Получаем пользователей из "контекста" (БД)
+        User managerEntity = userRepository.findByEmail("manager@test.com").orElseThrow();
+        User workerEntity = userRepository.findByEmail("worker@test.com").orElseThrow();
+
+        // 1.3. Создаем UserPrincipal из реальных, сохраненных сущностей
+        UserPrincipal manager = UserPrincipal.from(managerEntity);
+        UserPrincipal worker = UserPrincipal.from(workerEntity);
 
         // --- 2. WHEN ---
 
@@ -74,6 +90,7 @@ public class ReceivingFullFlowIT extends BaseIT {
         goodsReceiptService.closeReceiving(manager, receiptId);
 
         // --- 3. THEN ---
+
 
         // Проверяем статус акта
         GoodsReceipt closedReceipt = goodsReceiptRepository.findById(receiptId)

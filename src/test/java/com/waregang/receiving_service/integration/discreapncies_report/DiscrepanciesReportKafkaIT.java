@@ -13,7 +13,11 @@ import com.waregang.receiving_service.receiving_process.api.dto.ScanHandlingUnit
 import com.waregang.receiving_service.receiving_process.api.dto.StartReceivingRequest;
 import com.waregang.receiving_service.receiving_process.application.GoodsReceiptService;
 import com.waregang.receiving_service.receiving_process.application.ReceivingProcessService;
+import com.waregang.receiving_service.security.User;
 import com.waregang.receiving_service.security.UserPrincipal;
+import com.waregang.receiving_service.security.UserRepository;
+import com.waregang.receiving_service.security.api.dto.RegisterUserRequest;
+import com.waregang.receiving_service.security.application.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +33,8 @@ import static org.awaitility.Awaitility.await;
 
 public class DiscrepanciesReportKafkaIT extends BaseIT {
 
+    @Autowired private AuthService authService;
+    @Autowired private UserRepository userRepository;
     @Autowired private ReceivingProcessService receivingProcessService;
     @Autowired private GoodsReceiptService goodsReceiptService;
     @Autowired private InboundDeliveryRepository inboundDeliveryRepository;
@@ -45,8 +51,10 @@ public class DiscrepanciesReportKafkaIT extends BaseIT {
     void shouldEmitDiscrepancyEventOnShortage() {
         // 1. GIVEN
         InboundDelivery delivery = inboundDeliveryRepository.save(DeliveryMother.withNestedTree()); // Ожидается 100 SKU-123
-        UserPrincipal manager = UserMother.manager();
-        UserPrincipal worker = UserMother.worker(delivery.getWarehouseId());
+        authService.registerBoxManager(new RegisterUserRequest("manager", delivery.getWarehouseId(), "manager@test.com", "password"));
+        authService.registerBoxCat(new RegisterUserRequest("worker", delivery.getWarehouseId(), "worker@test.com", "password"));
+        UserPrincipal manager = UserPrincipal.from(userRepository.findByEmail("manager@test.com").orElseThrow());
+        UserPrincipal worker = UserPrincipal.from(userRepository.findByEmail("worker@test.com").orElseThrow());
 
         UUID receiptId = goodsReceiptService.startReceiving(
                 new StartReceivingRequest(delivery.getAsnNumber(), "GATE-01"), manager
@@ -86,8 +94,10 @@ public class DiscrepanciesReportKafkaIT extends BaseIT {
     void shouldEmitDiscrepancyEventOnSurplus() {
         // 1. GIVEN
         InboundDelivery delivery = inboundDeliveryRepository.save(DeliveryMother.withNestedTree()); // Ожидается 100 SKU-123
-        UserPrincipal manager = UserMother.manager();
-        UserPrincipal worker = UserMother.worker(delivery.getWarehouseId());
+        authService.registerBoxManager(new RegisterUserRequest("manager", delivery.getWarehouseId(), "manager2@test.com", "password"));
+        authService.registerBoxCat(new RegisterUserRequest("worker", delivery.getWarehouseId(), "worker2@test.com", "password"));
+        UserPrincipal manager = UserPrincipal.from(userRepository.findByEmail("manager2@test.com").orElseThrow());
+        UserPrincipal worker = UserPrincipal.from(userRepository.findByEmail("worker2@test.com").orElseThrow());
 
         UUID receiptId = goodsReceiptService.startReceiving(
                 new StartReceivingRequest(delivery.getAsnNumber(), "GATE-01"), manager
@@ -127,8 +137,10 @@ public class DiscrepanciesReportKafkaIT extends BaseIT {
     void shouldEmitDiscrepancyEventOnSubstitution() {
         // 1. GIVEN
         InboundDelivery delivery = inboundDeliveryRepository.save(DeliveryMother.withNestedTree()); // Ожидается 100 SKU-123
-        UserPrincipal manager = UserMother.manager();
-        UserPrincipal worker = UserMother.worker(delivery.getWarehouseId());
+        authService.registerBoxManager(new RegisterUserRequest("manager", delivery.getWarehouseId(), "manager3@test.com", "password"));
+        authService.registerBoxCat(new RegisterUserRequest("worker", delivery.getWarehouseId(), "worker3@test.com", "password"));
+        UserPrincipal manager = UserPrincipal.from(userRepository.findByEmail("manager3@test.com").orElseThrow());
+        UserPrincipal worker = UserPrincipal.from(userRepository.findByEmail("worker3@test.com").orElseThrow());
 
         UUID receiptId = goodsReceiptService.startReceiving(
                 new StartReceivingRequest(delivery.getAsnNumber(), "GATE-01"), manager

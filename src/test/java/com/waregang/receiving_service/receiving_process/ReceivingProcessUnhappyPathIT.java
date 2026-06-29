@@ -14,7 +14,11 @@ import com.waregang.receiving_service.receiving_process.application.GoodsReceipt
 import com.waregang.receiving_service.receiving_process.application.ReceivingProcessService;
 import com.waregang.receiving_service.receiving_process.infrastructure.GoodsReceiptRepository;
 import com.waregang.receiving_service.receiving_process.infrastructure.WorkerReceivingSessionRepository;
+import com.waregang.receiving_service.security.User;
 import com.waregang.receiving_service.security.UserPrincipal;
+import com.waregang.receiving_service.security.UserRepository;
+import com.waregang.receiving_service.security.api.dto.RegisterUserRequest;
+import com.waregang.receiving_service.security.application.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +45,9 @@ public class ReceivingProcessUnhappyPathIT extends BaseIT {
     @Autowired
     private WorkerReceivingSessionRepository sessionRepository;
 
+    @Autowired private AuthService authService;
+    @Autowired private UserRepository userRepository;
+
     // =============================================
     // 1. Воркер пытается join к уже закрытой приёмке
     // =============================================
@@ -50,9 +57,10 @@ public class ReceivingProcessUnhappyPathIT extends BaseIT {
         // Given
         InboundDelivery delivery = DeliveryMother.withNestedTree();
         inboundDeliveryRepository.save(delivery);
-
-        UserPrincipal manager = UserMother.manager();
-        UserPrincipal worker = UserMother.worker(delivery.getWarehouseId());
+        authService.registerBoxManager(new RegisterUserRequest("manager4", delivery.getWarehouseId(), "manager4@test.com", "password"));
+        authService.registerBoxCat(new RegisterUserRequest("worker4", delivery.getWarehouseId(), "worker4@test.com", "password"));
+        UserPrincipal manager = UserPrincipal.from(userRepository.findByEmail("manager4@test.com").orElseThrow());
+        UserPrincipal worker = UserPrincipal.from(userRepository.findByEmail("worker4@test.com").orElseThrow());
 
         var startResponse = goodsReceiptService.startReceiving(
                 new StartReceivingRequest(delivery.getAsnNumber(), "GATE-01"), manager
@@ -84,9 +92,10 @@ public class ReceivingProcessUnhappyPathIT extends BaseIT {
                 .build();
         inboundDeliveryRepository.save(delivery1);
         inboundDeliveryRepository.save(delivery2);
-
-        UserPrincipal manager = UserMother.manager();
-        UserPrincipal worker = UserMother.worker(delivery1.getWarehouseId());
+        authService.registerBoxManager(new RegisterUserRequest("manager5", delivery1.getWarehouseId(), "manager5@test.com", "password"));
+        authService.registerBoxCat(new RegisterUserRequest("worker5", delivery1.getWarehouseId(), "worker5@test.com", "password"));
+        UserPrincipal manager = UserPrincipal.from(userRepository.findByEmail("manager5@test.com").orElseThrow());
+        UserPrincipal worker = UserPrincipal.from(userRepository.findByEmail("worker5@test.com").orElseThrow());
 
         UUID receiptId1 = goodsReceiptService.startReceiving(
                 new StartReceivingRequest(delivery1.getAsnNumber(), "GATE-01"), manager
@@ -117,9 +126,10 @@ public class ReceivingProcessUnhappyPathIT extends BaseIT {
         // Given
         InboundDelivery delivery = DeliveryMother.withNestedTree();
         inboundDeliveryRepository.save(delivery);
-
-        UserPrincipal manager = UserMother.manager();
-        UserPrincipal worker = UserMother.worker(delivery.getWarehouseId());
+        authService.registerBoxManager(new RegisterUserRequest("manager6", delivery.getWarehouseId(), "manager6@test.com", "password"));
+        authService.registerBoxCat(new RegisterUserRequest("worker6", delivery.getWarehouseId(), "worker6@test.com", "password"));
+        UserPrincipal manager = UserPrincipal.from(userRepository.findByEmail("manager6@test.com").orElseThrow());
+        UserPrincipal worker = UserPrincipal.from(userRepository.findByEmail("worker6@test.com").orElseThrow());
 
         UUID receiptId = goodsReceiptService.startReceiving(
                 new StartReceivingRequest(delivery.getAsnNumber(), "GATE-01"), manager
@@ -146,9 +156,10 @@ public class ReceivingProcessUnhappyPathIT extends BaseIT {
         // Given
         InboundDelivery delivery = DeliveryMother.withNestedTree();
         inboundDeliveryRepository.save(delivery);
-
-        UserPrincipal manager = UserMother.manager();
-        UserPrincipal worker = UserMother.worker(delivery.getWarehouseId());
+        authService.registerBoxManager(new RegisterUserRequest("manager7", delivery.getWarehouseId(), "manager7@test.com", "password"));
+        authService.registerBoxCat(new RegisterUserRequest("worker7", delivery.getWarehouseId(), "worker7@test.com", "password"));
+        UserPrincipal manager = UserPrincipal.from(userRepository.findByEmail("manager7@test.com").orElseThrow());
+        UserPrincipal worker = UserPrincipal.from(userRepository.findByEmail("worker7@test.com").orElseThrow());
 
         UUID receiptId = goodsReceiptService.startReceiving(
                 new StartReceivingRequest(delivery.getAsnNumber(), "GATE-01"), manager

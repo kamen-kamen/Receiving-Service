@@ -19,7 +19,7 @@ import org.testcontainers.utility.DockerImageName;
 @Import(IntegrationTestConfig.class)
 public abstract class BaseIT {
     @PersistenceContext
-    private EntityManager entityManager;
+    protected EntityManager entityManager;
 
     @Container
     @ServiceConnection

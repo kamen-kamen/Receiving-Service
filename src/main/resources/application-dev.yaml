@@ -1,19 +1,16 @@
-# Убери лишний отступ перед security и jpa!
 spring:
   security:
     jwt:
-      secret: "vZWtIb0AUbrMiSNB1tL+EzavlbQ9gpEgQpYxlLs1FuA"
-      expiration: 43200000
+      secret: ${JWT_SECRET}
+      expiration: ${JWT_EXPIRATION:43200000}
 
   kafka:
     bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-
       acks: all
       retries: 3
-
       properties:
         retry.backoff.ms: 1000
         spring.json.add.type.headers: false
@@ -21,11 +18,10 @@ spring:
 logging:
   level:
     root: info
-    com.waregang: DEBUG  # свои пакеты на DEBUG в dev
-    org.hibernate.SQL: DEBUG  # если хочешь видеть SQL
+    com.waregang: DEBUG
+    org.hibernate.SQL: DEBUG
   pattern:
     console: "%d{HH:mm:ss} [%thread] %-5level %logger{36} [%X{receiptId}] - %msg%n"
-
 
 springdoc:
   api-docs:

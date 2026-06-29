@@ -17,7 +17,7 @@ public interface InboundDeliveryRepository extends JpaRepository<InboundDelivery
     boolean existsByIdAndStatus(UUID inboundDeliveryId, InboundDeliveryStatus inboundDeliveryStatus);
 
     @Query("""
-            SELECT SkuQuantityDto(c.sku, SUM(c.quantity))
+            SELECT new com.waregang.receiving_service.integration.infrastrusture.dto.SkuQuantityDto(c.sku, SUM(c.quantity))
             FROM Content c
             WHERE c.containerUnit.inboundDelivery.id = :deliveryId
             GROUP BY c.sku

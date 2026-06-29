@@ -12,6 +12,11 @@ import com.waregang.receiving_service.receiving_process.api.dto.StartReceivingRe
 import com.waregang.receiving_service.receiving_process.application.GoodsReceiptService;
 import com.waregang.receiving_service.receiving_process.application.ReceivingProcessService;
 import com.waregang.receiving_service.security.UserPrincipal;
+import com.waregang.receiving_service.security.User;
+import com.waregang.receiving_service.security.UserPrincipal;
+import com.waregang.receiving_service.security.UserRepository;
+import com.waregang.receiving_service.security.api.dto.RegisterUserRequest;
+import com.waregang.receiving_service.security.application.AuthService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,6 +37,8 @@ class InventoryKafkaAdapterIT extends BaseIT {
     @Autowired private InboundDeliveryRepository inboundDeliveryRepository;
     @Autowired private InventoryKafkaTestConsumer testConsumer;
     @Autowired private JsonMapper jsonMapper; // Для десериализации ответа из Kafka
+    @Autowired private AuthService authService;
+    @Autowired private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
@@ -43,8 +50,10 @@ class InventoryKafkaAdapterIT extends BaseIT {
     void shouldEmitIntegrationEventWithCorrectData() {
         // 1. GIVEN: Подготовка данных через Mother
         InboundDelivery delivery = inboundDeliveryRepository.save(DeliveryMother.withNestedTree());
-        UserPrincipal manager = UserMother.manager();
-        UserPrincipal worker = UserMother.worker(delivery.getWarehouseId());
+        authService.registerBoxManager(new RegisterUserRequest("manager8", delivery.getWarehouseId(), "manager8@test.com", "password"));
+        authService.registerBoxCat(new RegisterUserRequest("worker8", delivery.getWarehouseId(), "worker8@test.com", "password"));
+        UserPrincipal manager = UserPrincipal.from(userRepository.findByEmail("manager8@test.com").orElseThrow());
+        UserPrincipal worker = UserPrincipal.from(userRepository.findByEmail("worker8@test.com").orElseThrow());
 
         // Проходим минимальный цикл приемки
         UUID receiptId = goodsReceiptService.startReceiving(
