@@ -17,6 +17,7 @@ import com.waregang.receiving_service.receiving_process.infrastructure.GoodsRece
 import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
@@ -31,6 +32,7 @@ public class GoodsReceiptService {
     private final GoodsReceiptRepository goodsReceiptRepository;
     private final WorkerReceivingSessionRepository workerSessionRepository;
 
+    // TODO:  mb add retryable later
     @Transactional
     public StartReceivingResponse startReceiving(
             StartReceivingRequest request,
@@ -38,11 +40,7 @@ public class GoodsReceiptService {
     ) {
         InboundDelivery inboundDelivery = inboundDeliveryService.findByAsn(request.asnNumber());
 
-        try {
-            inboundDelivery.markAsArrived(manager.warehouseId());
-        } catch (OptimisticLockException e) {
-            throw AppException.of(ReceivingErrorCode.DELIVERY_CONCURRENT_MODIFICATION);
-        }
+        inboundDelivery.markAsArrived(manager.warehouseId());
 
         GoodsReceipt receipt = GoodsReceipt.open(
                 manager.id(),
@@ -69,6 +67,8 @@ public class GoodsReceiptService {
                     .with("receipt_id", receiptId);
         }
 
+        // GoodsReceipt is a point of synchronization for itself and WorkerReceivingSession:
+        // fetching worker receiving session without locks because its creation is locked on GoodsReceipt as well
         if (workerSessionRepository.existsByReceiptIdAndStatus(
                 receiptId,
                 WorkerReceivingSessionStatus.IN_PROCESS
@@ -105,7 +105,7 @@ public class GoodsReceiptService {
         );
     }
 
-
+    @Transactional(propagation = Propagation.MANDATORY)
     public GoodsReceipt findReceiptByIdWithLock(UUID receiptId) {
         return goodsReceiptRepository.findWithLockById(receiptId)
                 .orElseThrow(() -> AppException.of(ReceivingErrorCode.RECEIPT_NOT_FOUND)

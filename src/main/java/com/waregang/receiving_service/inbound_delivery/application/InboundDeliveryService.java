@@ -12,6 +12,7 @@ import com.waregang.receiving_service.inbound_delivery.infrastructure.InboundDel
 import com.waregang.receiving_service.receiving_process.domain.event.ClosedGoodsReceiptEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -33,7 +34,7 @@ public class InboundDeliveryService {
         return new CreateDeliveryResponse(delivery.getId());
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.MANDATORY)
     public InboundDelivery findByAsn(String asnNumber) {
         return inboundDeliveryRepository.findByAsnNumber(asnNumber)
                 .orElseThrow(() -> AppException.of(InboundDeliveryErrorCode.DELIVERY_NOT_FOUND)

@@ -16,7 +16,7 @@ public enum ReceivingErrorCode implements ErrorCode {
     WORKER_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "worker-session.not-found"),
     WORKER_SESSION_INVALID_STATE(HttpStatus.CONFLICT, "worker-session.invalid-state"),
     WORKER_ALREADY_JOINED(HttpStatus.CONFLICT, "worker-session.already-joined"),
-
+    WORKER_SESSION_ALREADY_COMPLETED(HttpStatus.CONFLICT, "worker-session.already-completed"),
     // Scanning
     SCANNED_HU_NOT_IN_THE_DELIVERY(HttpStatus.CONFLICT, "scanning.unit-not-in-the-delivery"),
     CONTENT_NOT_IN_THE_DELIVERY(HttpStatus.CONFLICT, "scanning.content-not-in-the-delivery"),
@@ -34,6 +34,7 @@ public enum ReceivingErrorCode implements ErrorCode {
 
     // Inbound Delivery
     DELIVERY_CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "inbound-delivery.change-conflict");
+
 
 
 

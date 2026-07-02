@@ -5,7 +5,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import org.springframework.http.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -60,5 +64,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ProblemDetail handleAuthenticationException(AuthenticationException authenticationException) {
         log.warn("Handling authentication exception: {}", authenticationException.getMessage(), authenticationException);
         return problemDetailFactory.create(authenticationException);
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    ProblemDetail handleObjectOptimisticLockingFailureException(ObjectOptimisticLockingFailureException optimisticLockException) {
+        log.warn("Handling optimistic lock exception: {}", optimisticLockException.getMessage(), optimisticLockException);
+        return problemDetailFactory.create(optimisticLockException);
     }
 }

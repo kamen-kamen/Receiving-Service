@@ -52,23 +52,25 @@ public class ReceivingProcessService {
     private void saveWorkerReceivingSession(WorkerReceivingSession session) {
         try {
             workerSessionRepository.save(session);
+            workerSessionRepository.flush();
         } catch (DataIntegrityViolationException e) {
             if (e.getRootCause() instanceof ConstraintViolationException cve) {
-                if ("uk_worker_active_session".equals(cve.getConstraintName())) {
+                if ("uk_worker_active_session".equals(cve.getConstraintName()))
                     throw AppException.of(ReceivingErrorCode.WORKER_ALREADY_JOINED);
-                }
+
             }
 
             throw e;
         }
     }
 
+
     @Transactional
     public ScanHandlingUnitResponse scanHandlingUnit(
             ScanHandlingUnitRequest scanRequest,
             UserPrincipal worker
     ) {
-        WorkerReceivingSession session = findActiveSessionByWorker(worker);
+        WorkerReceivingSession session = findActiveSessionByWorkerWithLock(worker);
         session.ensureAvailableForHandlingUnitScan();
 
         inboundDeliveryService.validateScannedHuAgainstAsn(scanRequest.lpn(), session.getInboundDeliveryId());
@@ -77,7 +79,6 @@ public class ReceivingProcessService {
         if (session.getCurrentUnit() != null)
             proxyParentUnit = entityManager.getReference(ReceivedUnit.class, session.getCurrentUnit().getId());
 
-        
         ReceivedUnit unit = ReceivedUnit.assignToParentUnit(scanRequest, session, proxyParentUnit);
 
         saveReceivedUnit(unit);
@@ -108,7 +109,7 @@ public class ReceivingProcessService {
             ScanContentRequest scanRequest,
             UserPrincipal worker
     ) {
-        WorkerReceivingSession session = findActiveSessionByWorker(worker);
+        WorkerReceivingSession session = findActiveSessionByWorkerWithLock(worker);
         session.ensureAvailableForContentScan();
 
         inboundDeliveryService.validateScannedContentAgainstAsn(
@@ -143,7 +144,7 @@ public class ReceivingProcessService {
     public NavigationBackResponse getBackToPreviousUnit(
             UserPrincipal worker
     ) {
-        WorkerReceivingSession session = findActiveSessionByWorker(worker);
+        WorkerReceivingSession session = findActiveSessionByWorkerWithLock(worker);
         session.navigateBack();
 
         return new NavigationBackResponse(session.getCurrentUnitLpnPath());
@@ -152,12 +153,12 @@ public class ReceivingProcessService {
 
     @Transactional
     public void completeWorkerSession(UserPrincipal worker) {
-        WorkerReceivingSession session = findActiveSessionByWorker(worker);
+        WorkerReceivingSession session = findActiveSessionByWorkerWithLock(worker);
         session.complete();
         workerSessionRepository.save(session);
     }
 
-    private WorkerReceivingSession findActiveSessionByWorker(UserPrincipal worker) {
+    private WorkerReceivingSession findActiveSessionByWorkerWithLock(UserPrincipal worker) {
         return workerSessionRepository
                 .findByWorkerIdAndStatus(worker.id(), WorkerReceivingSessionStatus.IN_PROCESS)
                 .orElseThrow(() -> AppException.of(ReceivingErrorCode.WORKER_SESSION_NOT_FOUND)

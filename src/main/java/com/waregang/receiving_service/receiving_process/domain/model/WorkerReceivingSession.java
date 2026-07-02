@@ -136,11 +136,12 @@ public class WorkerReceivingSession extends AbstractAggregateRoot<WorkerReceivin
 
     public void complete() {
         if (this.status ==  WorkerReceivingSessionStatus.COMPLETED)
-            return;
+            throw AppException.of(ReceivingErrorCode.WORKER_SESSION_ALREADY_COMPLETED);
 
         this.status = WorkerReceivingSessionStatus.COMPLETED;
         this.currentUnitLpnPath = null;
         this.currentUnit = null;
+
         registerEvent(new WorkerSessionClosedEvent(this.id));
     }
 
