@@ -3,6 +3,7 @@ package com.waregang.receiving_service.fixtures.receiving;
 import com.waregang.receiving_service.inbound_delivery.domain.model.InboundDelivery;
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceipt;
 import com.waregang.receiving_service.receiving_process.domain.model.WorkerReceivingSession;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.WorkerReceivingSessionJpa;
 
 public class ReceivingMother {
     

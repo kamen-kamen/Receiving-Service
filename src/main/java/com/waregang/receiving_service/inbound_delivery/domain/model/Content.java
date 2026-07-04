@@ -25,7 +25,7 @@ public class Content implements Persistable<UUID> {
     private String sku;
 
     @Column(name = "quantity", nullable = false)
-    private int quantity;
+    private Integer quantity;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "container_unit_id", nullable = false)

@@ -16,7 +16,7 @@ import java.util.UUID;
 @Table(name = "received_contents"
 //        @UniqueConstraint(name = "uk_unit_sku", columnNames = {"container_unit_id", "sku"})
 )
-public class ReceivedContent implements Persistable<UUID> {
+public class ReceivedContentJpa implements Persistable<UUID> {
     @Id
     @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
     private UUID id;
@@ -25,21 +25,24 @@ public class ReceivedContent implements Persistable<UUID> {
     private String sku;
 
     @Column(name = "quantity", nullable = false)
-    private int quantity;
+    private Long quantity;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "container_unit_id")
-    private ReceivedUnit containerUnit;
+    private ReceivedUnitJpa containerUnit;
 
-    private ReceivedContent(String sku, int quantity, ReceivedUnit containerUnit) {
+    private ReceivedContentJpa(String sku, Long quantity, ReceivedUnitJpa containerUnit) {
         this.id = IdGenerator.generate();
         this.sku = sku;
         this.quantity = quantity;
         this.containerUnit = containerUnit;
     }
 
-    public static ReceivedContent assignToContainer(ScanContentRequest scanRequest, ReceivedUnit containerUnit) {
-        return new ReceivedContent(scanRequest.sku(), scanRequest.quantity(), containerUnit);
+    public static ReceivedContentJpa assignToContainer(
+            ScanContentRequest scanRequest,
+            ReceivedUnitJpa containerUnit
+    ) {
+        return new ReceivedContentJpa(scanRequest.sku(), scanRequest.quantity(), containerUnit);
     }
 
     @Override
@@ -50,7 +53,7 @@ public class ReceivedContent implements Persistable<UUID> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ReceivedContent other)) return false;
+        if (!(o instanceof ReceivedContentJpa other)) return false;
         return Objects.equals(this.id, other.id);
     }
 

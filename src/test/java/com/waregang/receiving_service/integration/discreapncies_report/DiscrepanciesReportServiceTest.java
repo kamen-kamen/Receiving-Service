@@ -2,9 +2,9 @@ package com.waregang.receiving_service.integration.discreapncies_report;
 
 import com.waregang.receiving_service.inbound_delivery.infrastructure.InboundDeliveryRepository;
 import com.waregang.receiving_service.integration.application.DiscrepanciesReportService;
-import com.waregang.receiving_service.integration.infrastrusture.DiscrepanciesReportPort;
+import com.waregang.receiving_service.integration.application.DiscrepanciesReportPort;
 import com.waregang.receiving_service.receiving_process.domain.event.ClosedGoodsReceiptEvent;
-import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedContentRepository;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedContentRepositoryJpa;
 import com.waregang.receiving_service.integration.infrastrusture.dto.DiscrepanciesReport;
 import com.waregang.receiving_service.integration.infrastrusture.dto.DiscrepancyLine;
 import com.waregang.receiving_service.integration.infrastrusture.dto.DiscrepancyType;
@@ -35,7 +35,7 @@ class DiscrepanciesReportServiceTest {
     private InboundDeliveryRepository deliveryRepository;
 
     @Mock
-    private ReceivedContentRepository contentRepository;
+    private ReceivedContentRepositoryJpa contentRepository;
 
     @InjectMocks
     private DiscrepanciesReportService service;
@@ -161,7 +161,7 @@ class DiscrepanciesReportServiceTest {
         return captor.getValue();
     }
 
-    private SkuQuantityDto skuQty(String sku, long quantity) {
+    private SkuQuantityDto skuQty(String sku, Long quantity) {
         return new SkuQuantityDto(sku, quantity);
     }
 }

@@ -2,8 +2,8 @@ package com.waregang.receiving_service.integration;
 
 import com.waregang.receiving_service.integration.application.PutAwayMapper;
 import com.waregang.receiving_service.integration.infrastrusture.dto.ForwardPutAwayRequest;
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContent;
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnit;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContentJpa;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnitJpa;
 import com.waregang.receiving_service.receiving_process.infrastructure.dto.ReceivedUnitDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,21 +31,21 @@ class PutAwayMapperTest {
         UUID workerSessionId = UUID.randomUUID();
         String occurredOn = "2026-05-23T22:47:00Z";
 
-        ReceivedContent content = mock(ReceivedContent.class);
+        ReceivedContentJpa content = mock(ReceivedContentJpa.class);
         when(content.getSku()).thenReturn("SKU-1");
-        when(content.getQuantity()).thenReturn(10);
+        when(content.getQuantity()).thenReturn(10L);
 
-        ReceivedUnit childUnit = mock(ReceivedUnit.class);
+        ReceivedUnitJpa childUnit = mock(ReceivedUnitJpa.class);
         when(childUnit.getLpn()).thenReturn("CHILD-LPN");
         when(childUnit.getChildUnits()).thenReturn(Collections.emptySet());
         when(childUnit.getContents()).thenReturn(Collections.singleton(content));
 
-        ReceivedUnit rootUnit = mock(ReceivedUnit.class);
+        ReceivedUnitJpa rootUnit = mock(ReceivedUnitJpa.class);
         when(rootUnit.getLpn()).thenReturn("ROOT-LPN");
         when(rootUnit.getChildUnits()).thenReturn(Collections.singleton(childUnit));
         when(rootUnit.getContents()).thenReturn(Collections.emptySet());
 
-        List<ReceivedUnit> rootUnits = List.of(rootUnit);
+        List<ReceivedUnitJpa> rootUnits = List.of(rootUnit);
 
         // Act
         ForwardPutAwayRequest result = mapper.toPutAwayRequestDto(rootUnits, workerSessionId, occurredOn);
@@ -89,34 +89,34 @@ class PutAwayMapperTest {
         String occurredOn = "2026-05-23T22:47:00Z";
 
         // Grandchild (with content)
-        ReceivedContent content = mock(ReceivedContent.class);
+        ReceivedContentJpa content = mock(ReceivedContentJpa.class);
         when(content.getSku()).thenReturn("SKU-1");
-        when(content.getQuantity()).thenReturn(5);
+        when(content.getQuantity()).thenReturn(5L);
 
-        ReceivedUnit grandChildUnit = mock(ReceivedUnit.class);
+        ReceivedUnitJpa grandChildUnit = mock(ReceivedUnitJpa.class);
         when(grandChildUnit.getLpn()).thenReturn("GRANDCHILD-LPN");
         when(grandChildUnit.getChildUnits()).thenReturn(Collections.emptySet());
         when(grandChildUnit.getContents()).thenReturn(Collections.singleton(content));
 
         // Child A (with grandchild)
-        ReceivedUnit childUnitA = mock(ReceivedUnit.class);
+        ReceivedUnitJpa childUnitA = mock(ReceivedUnitJpa.class);
         when(childUnitA.getLpn()).thenReturn("CHILD-A-LPN");
         when(childUnitA.getChildUnits()).thenReturn(Collections.singleton(grandChildUnit));
         when(childUnitA.getContents()).thenReturn(Collections.emptySet());
 
         // Child B (empty)
-        ReceivedUnit childUnitB = mock(ReceivedUnit.class);
+        ReceivedUnitJpa childUnitB = mock(ReceivedUnitJpa.class);
         when(childUnitB.getLpn()).thenReturn("CHILD-B-LPN");
         when(childUnitB.getChildUnits()).thenReturn(Collections.emptySet());
         when(childUnitB.getContents()).thenReturn(Collections.emptySet());
 
         // Root
-        ReceivedUnit rootUnit = mock(ReceivedUnit.class);
+        ReceivedUnitJpa rootUnit = mock(ReceivedUnitJpa.class);
         when(rootUnit.getLpn()).thenReturn("ROOT-LPN");
         when(rootUnit.getChildUnits()).thenReturn(java.util.Set.of(childUnitA, childUnitB));
         when(rootUnit.getContents()).thenReturn(Collections.emptySet());
 
-        List<ReceivedUnit> rootUnits = List.of(rootUnit);
+        List<ReceivedUnitJpa> rootUnits = List.of(rootUnit);
 
         // Act
         ForwardPutAwayRequest result = mapper.toPutAwayRequestDto(rootUnits, workerSessionId, occurredOn);

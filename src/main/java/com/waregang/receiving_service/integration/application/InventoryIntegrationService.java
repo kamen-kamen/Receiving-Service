@@ -1,9 +1,8 @@
 package com.waregang.receiving_service.integration.application;
 
 import com.waregang.receiving_service.receiving_process.domain.event.WorkerSessionClosedEvent;
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnit;
-import com.waregang.receiving_service.integration.infrastrusture.InventoryPutAwayPort;
-import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedUnitRepository;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnitJpa;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedUnitRepositoryJpa;
 import com.waregang.receiving_service.integration.infrastrusture.dto.ForwardPutAwayRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,12 +19,12 @@ import java.util.List;
 public class InventoryIntegrationService {
 
     private final InventoryPutAwayPort putAwayPort;
-    private final ReceivedUnitRepository receivedUnitRepository;
+    private final ReceivedUnitRepositoryJpa receivedUnitRepositoryJpa;
     private final PutAwayMapper putAwayMapper;
 
     @Transactional(readOnly = true)
     public void submitForPutAway(WorkerSessionClosedEvent event) {
-        List<ReceivedUnit> rootUnits = receivedUnitRepository
+        List<ReceivedUnitJpa> rootUnits = receivedUnitRepositoryJpa
                 .findAllByWorkerSessionIdAndParentUnitIsNull(event.workerSessionId());
 
         if (CollectionUtils.isEmpty(rootUnits)) {

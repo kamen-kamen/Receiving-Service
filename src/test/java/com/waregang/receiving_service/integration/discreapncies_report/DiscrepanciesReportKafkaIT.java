@@ -52,7 +52,7 @@ public class DiscrepanciesReportKafkaIT extends BaseIT {
         receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("PALLET-01"), workerPrincipal);
         receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("BOX-01"), workerPrincipal);
         // Сканируем меньше, чем ожидалось
-        receivingProcessService.scanContent(new ScanContentRequest("SKU-123", 50), workerPrincipal);
+        receivingProcessService.scanContent(new ScanContentRequest("SKU-123", 50L), workerPrincipal);
         receivingProcessService.completeWorkerSession(workerPrincipal);
 
         // 2. WHEN
@@ -91,7 +91,7 @@ public class DiscrepanciesReportKafkaIT extends BaseIT {
         receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("PALLET-01"), workerPrincipal);
         receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("BOX-01"), workerPrincipal);
         // Сканируем больше, чем ожидалось
-        receivingProcessService.scanContent(new ScanContentRequest("SKU-123", 150), workerPrincipal);
+        receivingProcessService.scanContent(new ScanContentRequest("SKU-123", 150L), workerPrincipal);
         receivingProcessService.completeWorkerSession(workerPrincipal);
 
         // 2. WHEN
@@ -130,7 +130,7 @@ public class DiscrepanciesReportKafkaIT extends BaseIT {
         receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("PALLET-01"), workerPrincipal);
         receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("BOX-01"), workerPrincipal);
         // Сканируем другой товар
-        assertThatThrownBy(() -> receivingProcessService.scanContent(new ScanContentRequest("SKU-999", 20), workerPrincipal))
+        assertThatThrownBy(() -> receivingProcessService.scanContent(new ScanContentRequest("SKU-999", 20L), workerPrincipal))
                 .isInstanceOf(AppException.class);
         receivingProcessService.completeWorkerSession(workerPrincipal);
 

@@ -3,10 +3,12 @@ package com.waregang.receiving_service.receiving_process.application;
 import com.waregang.receiving_service.common.exception_handling.AppException;
 import com.waregang.receiving_service.common.exception_handling.error_code.ReceivingErrorCode;
 import com.waregang.receiving_service.inbound_delivery.application.InboundDeliveryService;
-import com.waregang.receiving_service.receiving_process.domain.model.*;
-import com.waregang.receiving_service.receiving_process.infrastructure.*;
-import com.waregang.receiving_service.security.UserPrincipal;
 import com.waregang.receiving_service.receiving_process.api.dto.*;
+import com.waregang.receiving_service.receiving_process.domain.model.*;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedContentRepositoryJpa;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedUnitRepositoryJpa;
+import com.waregang.receiving_service.receiving_process.domain.ports.WorkerReceivingSessionRepositoryPort;
+import com.waregang.receiving_service.security.UserPrincipal;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.exception.ConstraintViolationException;
@@ -20,9 +22,10 @@ import java.util.UUID;
 
 @Service
 public class ReceivingProcessService {
-    private final WorkerReceivingSessionRepository workerSessionRepository;
-    private final ReceivedUnitRepository receivedUnitRepository;
-    private final ReceivedContentRepository receivedContentRepository;
+    private final WorkerReceivingSessionRepositoryPort workerSessionRepository;
+
+    private final ReceivedUnitRepositoryJpa receivedUnitRepositoryJpa;
+    private final ReceivedContentRepositoryJpa receivedContentRepositoryJpa;
 
     private final GoodsReceiptService goodsReceiptService;
     private final InboundDeliveryService inboundDeliveryService;
@@ -57,13 +60,11 @@ public class ReceivingProcessService {
             if (e.getRootCause() instanceof ConstraintViolationException cve) {
                 if ("uk_worker_active_session".equals(cve.getConstraintName()))
                     throw AppException.of(ReceivingErrorCode.WORKER_ALREADY_JOINED);
-
             }
 
             throw e;
         }
     }
-
 
     @Transactional
     public ScanHandlingUnitResponse scanHandlingUnit(
@@ -75,31 +76,33 @@ public class ReceivingProcessService {
 
         inboundDeliveryService.validateScannedHuAgainstAsn(scanRequest.lpn(), session.getInboundDeliveryId());
 
-        ReceivedUnit proxyParentUnit = null;
+        ReceivedUnitJpa proxyParentUnit = null;
         if (session.getCurrentUnit() != null)
-            proxyParentUnit = entityManager.getReference(ReceivedUnit.class, session.getCurrentUnit().getId());
+            proxyParentUnit = entityManager.getReference(ReceivedUnitJpa.class, session.getCurrentUnit().getId());
 
-        ReceivedUnit unit = ReceivedUnit.assignToParentUnit(scanRequest, session, proxyParentUnit);
+
+        ReceivedUnitJpa unit = ReceivedUnitJpa.assignToParentUnit(scanRequest, session, proxyParentUnit);
 
         saveReceivedUnit(unit);
 
         session.navigateToUnit(unit);
+        workerSessionRepository.update(session);
 
         return new ScanHandlingUnitResponse(session.getCurrentUnitLpnPath());
     }
 
-    private void saveReceivedUnit(ReceivedUnit unit) {
+    private void saveReceivedUnit(ReceivedUnitJpa unit) {
         try {
-            receivedUnitRepository.save(unit);
-            receivedUnitRepository.flush();
+            receivedUnitRepositoryJpa.save(unit);
+            receivedUnitRepositoryJpa.flush();
         } catch (DataIntegrityViolationException e) {
             if (e.getRootCause() instanceof ConstraintViolationException cve) {
-                if ("uk_receipt_lpn".equals(cve.getConstraintName())) {
+                if ("uk_receipt_lpn".equals(cve.getConstraintName()))
                     throw AppException.of(ReceivingErrorCode.LPN_ALREADY_SCANNED)
                             .with("lpn", unit.getLpn())
                             .with("receiptId", unit.getReceiptId());
-                }
             }
+
             throw e;
         }
     }
@@ -117,18 +120,18 @@ public class ReceivingProcessService {
                 session.getInboundDeliveryId()
         );
 
-        ReceivedUnit proxyContainer = entityManager.getReference(ReceivedUnit.class, session.getCurrentUnit().getId());
-        ReceivedContent content = ReceivedContent.assignToContainer(scanRequest, proxyContainer);
+        ReceivedUnitJpa proxyContainer = entityManager.getReference(ReceivedUnitJpa.class, session.getCurrentUnit().getId());
+        ReceivedContentJpa content = ReceivedContentJpa.assignToContainer(scanRequest, proxyContainer);
 
         saveReceivedContent(content);
 
         return new ScanContentResponse();
     }
 
-    private void saveReceivedContent(ReceivedContent content) {
+    private void saveReceivedContent(ReceivedContentJpa content) {
         try {
-            receivedContentRepository.save(content);
-            receivedContentRepository.flush();
+            receivedContentRepositoryJpa.save(content);
+            receivedContentRepositoryJpa.flush();
         } catch (DataIntegrityViolationException e) {
             if (e.getRootCause() instanceof ConstraintViolationException cve) {
                 if ("uk_unit_sku".equals(cve.getConstraintName())) {
@@ -146,6 +149,7 @@ public class ReceivingProcessService {
     ) {
         WorkerReceivingSession session = findActiveSessionByWorkerWithLock(worker);
         session.navigateBack();
+        workerSessionRepository.update(session);
 
         return new NavigationBackResponse(session.getCurrentUnitLpnPath());
     }
@@ -155,7 +159,7 @@ public class ReceivingProcessService {
     public void completeWorkerSession(UserPrincipal worker) {
         WorkerReceivingSession session = findActiveSessionByWorkerWithLock(worker);
         session.complete();
-        workerSessionRepository.save(session);
+        workerSessionRepository.update(session);
     }
 
     private WorkerReceivingSession findActiveSessionByWorkerWithLock(UserPrincipal worker) {

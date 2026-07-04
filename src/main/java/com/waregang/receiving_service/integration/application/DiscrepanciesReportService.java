@@ -2,8 +2,7 @@ package com.waregang.receiving_service.integration.application;
 
 import com.waregang.receiving_service.inbound_delivery.infrastructure.InboundDeliveryRepository;
 import com.waregang.receiving_service.receiving_process.domain.event.ClosedGoodsReceiptEvent;
-import com.waregang.receiving_service.integration.infrastrusture.DiscrepanciesReportPort;
-import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedContentRepository;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedContentRepositoryJpa;
 import com.waregang.receiving_service.integration.infrastrusture.dto.DiscrepanciesReport;
 import com.waregang.receiving_service.integration.infrastrusture.dto.DiscrepancyLine;
 import com.waregang.receiving_service.integration.infrastrusture.dto.DiscrepancyType;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
 public class DiscrepanciesReportService {
     private final DiscrepanciesReportPort port;
     private final InboundDeliveryRepository deliveryRepository;
-    private final ReceivedContentRepository contentRepository;
+    private final ReceivedContentRepositoryJpa contentRepository;
 
     @Transactional(readOnly = true)
     public void processClosedEvent(ClosedGoodsReceiptEvent event) {
