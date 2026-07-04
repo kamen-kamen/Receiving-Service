@@ -1,5 +1,6 @@
 package com.waregang.receiving_service.integration.infrastrusture;
 
+import com.waregang.receiving_service.integration.application.InventoryPutAwayPort;
 import com.waregang.receiving_service.integration.infrastrusture.dto.ForwardPutAwayRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

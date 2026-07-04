@@ -11,10 +11,11 @@ import com.waregang.receiving_service.receiving_process.api.dto.StartReceivingRe
 import com.waregang.receiving_service.receiving_process.application.GoodsReceiptService;
 import com.waregang.receiving_service.receiving_process.application.ReceivingProcessService;
 import com.waregang.receiving_service.receiving_process.domain.model.*;
-import com.waregang.receiving_service.receiving_process.infrastructure.GoodsReceiptRepository;
-import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedContentRepository;
-import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedUnitRepository;
-import com.waregang.receiving_service.receiving_process.infrastructure.WorkerReceivingSessionRepository;
+import com.waregang.receiving_service.receiving_process.domain.ports.GoodsReceiptRepositoryPort;
+import com.waregang.receiving_service.receiving_process.domain.ports.WorkerReceivingSessionRepositoryPort;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedContentRepositoryJpa;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedUnitRepositoryJpa;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.WorkerReceivingSessionJpa;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,10 +29,10 @@ public class ReceivingFullFlowIT extends BaseIT {
     @Autowired private ReceivingProcessService receivingProcessService;
     @Autowired private GoodsReceiptService goodsReceiptService;
     @Autowired private InboundDeliveryRepository inboundDeliveryRepository;
-    @Autowired private GoodsReceiptRepository goodsReceiptRepository;
-    @Autowired private WorkerReceivingSessionRepository sessionRepository;
-    @Autowired private ReceivedUnitRepository receivedUnitRepository;
-    @Autowired private ReceivedContentRepository receivedContentRepository;
+    @Autowired private GoodsReceiptRepositoryPort goodsReceiptRepositoryPort;
+    @Autowired private WorkerReceivingSessionRepositoryPort workerReceivingSessionRepositoryPort;
+    @Autowired private ReceivedUnitRepositoryJpa receivedUnitRepositoryJpa;
+    @Autowired private ReceivedContentRepositoryJpa receivedContentRepositoryJpa;
 
     @Test
     @DisplayName("Full Happy Path: Open Receipt -> Join Worker -> Scan Nested Tree -> Close")
@@ -58,7 +59,7 @@ public class ReceivingFullFlowIT extends BaseIT {
         receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("BOX-01"), workerPrincipal);
 
         // 2.5. Скан товара в последнюю отсканированную коробку
-        var scanContentReq = new ScanContentRequest("SKU-123", 100);
+        var scanContentReq = new ScanContentRequest("SKU-123", 100L);
         receivingProcessService.scanContent(scanContentReq, workerPrincipal);
 
         // 2.6. Воркер завершает свою часть работы
@@ -71,7 +72,7 @@ public class ReceivingFullFlowIT extends BaseIT {
 
 
         // Проверяем статус акта
-        GoodsReceipt closedReceipt = goodsReceiptRepository.findById(receiptId)
+        GoodsReceipt closedReceipt = goodsReceiptRepositoryPort.findById(receiptId)
                 .orElseThrow(() -> new AssertionError("GoodsReceipt не найден"));
         assertThat(closedReceipt.getStatus()).isEqualTo(GoodsReceiptStatus.CLOSED);
 
@@ -84,7 +85,7 @@ public class ReceivingFullFlowIT extends BaseIT {
         assertThat(updatedDelivery.getVersion()).isEqualTo(2);
 
         // Проверяем сессию через
-        WorkerReceivingSession session = sessionRepository.findAll().stream()
+        WorkerReceivingSession session = workerReceivingSessionRepositoryPort.findAll().stream()
                 .filter(s -> s.getWorkerId().equals(workerPrincipal.id()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Сессия воркера не найдена"));
@@ -93,9 +94,9 @@ public class ReceivingFullFlowIT extends BaseIT {
         assertThat(session.getCurrentUnitLpnPath()).isNull();
 
         // Проверяем, что юниты сохранились и иерархия верна
-        ReceivedUnit savedPallet = receivedUnitRepository.findByLpn("PALLET-01")
+        ReceivedUnitJpa savedPallet = receivedUnitRepositoryJpa.findByLpn("PALLET-01")
                 .orElseThrow(() -> new AssertionError("Паллета не найдена в БД"));
-        ReceivedUnit savedBox = receivedUnitRepository.findByLpn("BOX-01")
+        ReceivedUnitJpa savedBox = receivedUnitRepositoryJpa.findByLpn("BOX-01")
                 .orElseThrow(() -> new AssertionError("Коробка не найдена в БД"));
 
         //  BOX-01 должен ссылаться на PALLET-01
@@ -103,7 +104,7 @@ public class ReceivingFullFlowIT extends BaseIT {
         assertThat(savedBox.getParentUnit().getId()).isEqualTo(savedPallet.getId());
 
         // Проверяем контент
-        List<ReceivedContent> contents = receivedContentRepository.findAll();
+        List<ReceivedContentJpa> contents = receivedContentRepositoryJpa.findAll();
         assertThat(contents).hasSize(1);
         assertThat(contents.getFirst().getSku()).isEqualTo("SKU-123");
         assertThat(contents.getFirst().getQuantity()).isEqualTo(100);

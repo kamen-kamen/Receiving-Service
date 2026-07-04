@@ -5,9 +5,10 @@ import com.waregang.receiving_service.inbound_delivery.domain.model.InboundDeliv
 import com.waregang.receiving_service.receiving_process.api.dto.ScanContentRequest;
 import com.waregang.receiving_service.receiving_process.api.dto.ScanHandlingUnitRequest;
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceipt;
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContent;
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnit;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContentJpa;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnitJpa;
 import com.waregang.receiving_service.receiving_process.domain.model.WorkerReceivingSession;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.WorkerReceivingSessionJpa;
 import com.waregang.receiving_service.security.UserPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -176,16 +177,16 @@ public class ReceivingTestDataMother {
     // 4. FACTORY HELPERS FOR SCANNED DATA
     // ==========================================
 
-    public static ReceivedUnit scanUnit(WorkerReceivingSession session, ReceivedUnit proxyParent, String lpn) {
+    public static ReceivedUnitJpa scanUnit(WorkerReceivingSession session, ReceivedUnitJpa proxyParent, String lpn) {
         ScanHandlingUnitRequest request = new ScanHandlingUnitRequest(lpn);
-        ReceivedUnit unit = ReceivedUnit.assignToParentUnit(request, session, proxyParent);
+        ReceivedUnitJpa unit = ReceivedUnitJpa.assignToParentUnit(request, session, proxyParent);
         session.navigateToUnit(unit); // Обновляем состояние сессии, как это делает сервис
         return unit;
     }
 
-    public static ReceivedContent scanContent(ReceivedUnit currentUnit, String sku, int quantity) {
+    public static ReceivedContentJpa scanContent(ReceivedUnitJpa currentUnit, String sku, Long quantity) {
         ScanContentRequest request = new ScanContentRequest(sku, quantity);
-        return ReceivedContent.assignToContainer(request, currentUnit);
+        return ReceivedContentJpa.assignToContainer(request, currentUnit);
     }
 
     // ==========================================

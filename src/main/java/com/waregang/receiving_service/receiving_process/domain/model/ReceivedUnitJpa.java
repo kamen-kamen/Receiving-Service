@@ -2,6 +2,7 @@ package com.waregang.receiving_service.receiving_process.domain.model;
 
 import com.waregang.receiving_service.common.IdGenerator;
 import com.waregang.receiving_service.receiving_process.api.dto.ScanHandlingUnitRequest;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.WorkerReceivingSessionJpa;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -11,7 +12,10 @@ import org.hibernate.annotations.FetchMode;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Persistable;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
@@ -21,7 +25,7 @@ import java.util.*;
                 @UniqueConstraint(name = "uk_receipt_lpn", columnNames = {"receiptId", "lpn"})
         }
 )
-public class ReceivedUnit implements Persistable<UUID> {
+public class ReceivedUnitJpa implements Persistable<UUID> {
 
     @Id
     @Column(name = "id", updatable = false, unique = true, nullable = false, columnDefinition = "uuid")
@@ -33,14 +37,13 @@ public class ReceivedUnit implements Persistable<UUID> {
     @Column(name = "receiptId", nullable = false, updatable = false)
     private UUID receiptId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "worker_receiving_session_id", nullable = false, updatable = false)
-    private WorkerReceivingSession workerSession;
+    @Column(name = "worker_receiving_session_id", nullable = false, updatable = false)
+    private UUID workerSessionId;
 
     @Nullable
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
-    private ReceivedUnit parentUnit;
+    private ReceivedUnitJpa parentUnit;
 
     @OneToMany(
             fetch = FetchType.LAZY,
@@ -48,7 +51,7 @@ public class ReceivedUnit implements Persistable<UUID> {
             cascade = CascadeType.ALL,
             orphanRemoval = true)
     @Fetch(FetchMode.SUBSELECT)
-    private final Set<ReceivedUnit> childUnits = new HashSet<>();
+    private final Set<ReceivedUnitJpa> childUnits = new HashSet<>();
 
     @OneToMany(
             fetch = FetchType.LAZY,
@@ -56,25 +59,32 @@ public class ReceivedUnit implements Persistable<UUID> {
             cascade = CascadeType.ALL,
             orphanRemoval = true)
     @Fetch(FetchMode.SUBSELECT)
-    private final Set<ReceivedContent> contents = new HashSet<>();
+    private final Set<ReceivedContentJpa> contents = new HashSet<>();
 
-    private ReceivedUnit(String lpn, @Nullable ReceivedUnit parentUnit, WorkerReceivingSession workerSession) {
+    private ReceivedUnitJpa(
+            String lpn,
+            @Nullable
+            ReceivedUnitJpa parentUnit,
+            UUID workerSessionId,
+            UUID receiptId
+    ) {
         this.id = IdGenerator.generate();
         this.lpn = lpn;
         this.parentUnit = parentUnit;
-        this.workerSession = workerSession;
-        this.receiptId = workerSession.getReceiptId(); // Денормализация
+        this.workerSessionId = workerSessionId;
+        this.receiptId = receiptId;
     }
 
-    public static ReceivedUnit assignToParentUnit(
+    public static ReceivedUnitJpa assignToParentUnit(
             ScanHandlingUnitRequest scanRequest,
             WorkerReceivingSession session,
-            ReceivedUnit proxyParent
+            ReceivedUnitJpa proxyParent
     ) {
-        return new ReceivedUnit(
+        return new ReceivedUnitJpa(
                 scanRequest.lpn(),
                 proxyParent,
-                session
+                session.getId(),
+                session.getReceiptId()
         );
     }
 
@@ -86,7 +96,7 @@ public class ReceivedUnit implements Persistable<UUID> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ReceivedUnit other)) return false;
+        if (!(o instanceof ReceivedUnitJpa other)) return false;
         return Objects.equals(this.id, other.id);
     }
 
@@ -103,4 +113,4 @@ public class ReceivedUnit implements Persistable<UUID> {
     void markNotNew() {
         this.isNew = false;
     }
-}
+    }

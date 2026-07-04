@@ -10,13 +10,16 @@ import com.waregang.receiving_service.inbound_delivery.infrastructure.InboundDel
 import com.waregang.receiving_service.receiving_process.api.dto.ScanContentRequest;
 import com.waregang.receiving_service.receiving_process.api.dto.ScanHandlingUnitRequest;
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceipt;
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContent;
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnit;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContentJpa;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnitJpa;
 import com.waregang.receiving_service.receiving_process.domain.model.WorkerReceivingSession;
-import com.waregang.receiving_service.receiving_process.infrastructure.GoodsReceiptRepository;
-import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedContentRepository;
-import com.waregang.receiving_service.receiving_process.infrastructure.ReceivedUnitRepository;
-import com.waregang.receiving_service.receiving_process.infrastructure.WorkerReceivingSessionRepository;
+import com.waregang.receiving_service.receiving_process.domain.ports.GoodsReceiptRepositoryPort;
+import com.waregang.receiving_service.receiving_process.domain.ports.WorkerReceivingSessionRepositoryPort;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.WorkerReceivingSessionJpa;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.GoodsReceiptRepositoryJpa;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedContentRepositoryJpa;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedUnitRepositoryJpa;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.WorkerReceivingSessionRepositoryJpa;
 import com.waregang.receiving_service.integration.infrastrusture.dto.SkuQuantityDto;
 import com.waregang.receiving_service.security.User;
 import com.waregang.receiving_service.security.UserPrincipal;
@@ -39,11 +42,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RepositoryQueryIT extends BaseIT {
 
     @Autowired private InboundDeliveryRepository deliveryRepository;
-    @Autowired private GoodsReceiptRepository receiptRepository;
-    @Autowired private ReceivedContentRepository contentRepository;
-    @Autowired private WorkerReceivingSessionRepository sessionRepository;
-    @Autowired private ReceivedUnitRepository receivedUnitRepository;
-    @Autowired private ReceivedContentRepository receivedContentRepository;
+    @Autowired private GoodsReceiptRepositoryPort receiptRepository;
+    @Autowired private ReceivedContentRepositoryJpa contentRepository;
+    @Autowired private WorkerReceivingSessionRepositoryPort sessionRepository;
+    @Autowired private ReceivedUnitRepositoryJpa receivedUnitRepositoryJpa;
+    @Autowired private ReceivedContentRepositoryJpa receivedContentRepositoryJpa;
     @PersistenceContext EntityManager entityManager;
 
     private InboundDelivery delivery;
@@ -73,11 +76,11 @@ class RepositoryQueryIT extends BaseIT {
     @Test
     @DisplayName("Should return aggregated SKU quantities for receipt")
     void shouldReturnAggregatedSkuQuantities() {
-        ReceivedUnit pallet = saveUnit("PALLET-01", null);
-        ReceivedUnit box = saveUnit("BOX-01", pallet);
-        saveContent(box, "SKU-1", 10);
-        saveContent(box, "SKU-1", 5); // тот же SKU, должен суммироваться
-        saveContent(box, "SKU-2", 20);
+        ReceivedUnitJpa pallet = saveUnit("PALLET-01", null);
+        ReceivedUnitJpa box = saveUnit("BOX-01", pallet);
+        saveContent(box, "SKU-1", 10L);
+        saveContent(box, "SKU-1", 5L); // тот же SKU, должен суммироваться
+        saveContent(box, "SKU-2", 20L);
 
         List<SkuQuantityDto> result = contentRepository.findActualSkuQuantitiesByReceiptId(receiptId);
 
@@ -119,16 +122,16 @@ class RepositoryQueryIT extends BaseIT {
         sessionRepository.save(otherSession);
 
         // Сканируем в обе приёмки
-        ReceivedUnit box1 = saveUnit("BOX-RECEIPT-1", null);
-        saveContent(box1, "SKU-1", 100);
+        ReceivedUnitJpa box1 = saveUnit("BOX-RECEIPT-1", null);
+        saveContent(box1, "SKU-1", 100L);
 
-        ReceivedUnit box2 = saveUnitForSession("BOX-RECEIPT-2", null, otherSession);
-        saveContentForUnit(box2, "SKU-1", 999);
+        ReceivedUnitJpa box2 = saveUnitForSession("BOX-RECEIPT-2", null, otherSession);
+        saveContentForUnit(box2, "SKU-1", 999L);
 
         List<SkuQuantityDto> result = contentRepository.findActualSkuQuantitiesByReceiptId(receiptId);
 
         assertThat(result).hasSize(1);
-        assertThat(result.getFirst().quantity()).isEqualTo(100);
+        assertThat(result.getFirst().quantity()).isEqualTo(100L);
     }
 
     // =============================================
@@ -138,10 +141,10 @@ class RepositoryQueryIT extends BaseIT {
     @Test
     @DisplayName("Should return only root units for session")
     void shouldReturnOnlyRootUnits() {
-        ReceivedUnit pallet = saveUnit("PALLET-01", null);
+        ReceivedUnitJpa pallet = saveUnit("PALLET-01", null);
         saveUnit("BOX-01", pallet); // дочерний — не должен попасть
 
-        List<ReceivedUnit> roots = receivedUnitRepository
+        List<ReceivedUnitJpa> roots = receivedUnitRepositoryJpa
                 .findAllByWorkerSessionIdAndParentUnitIsNull(session.getId());
 
         assertThat(roots).hasSize(1);
@@ -152,18 +155,18 @@ class RepositoryQueryIT extends BaseIT {
     @DisplayName("Should load children ")
     @Transactional
     void shouldLoadChildrenEagerly() {
-        ReceivedUnit pallet = saveUnit("PALLET-01", null);
-        ReceivedUnit box = saveUnit("BOX-01", pallet);
-        saveContent(box, "SKU-1", 10);
+        ReceivedUnitJpa pallet = saveUnit("PALLET-01", null);
+        ReceivedUnitJpa box = saveUnit("BOX-01", pallet);
+        saveContent(box, "SKU-1", 10L);
 
         // otherwise hibernate uses L1 cache and loadedPallet.childs is empty bc we do not add in Java memory - only save in db
         entityManager.flush();
         entityManager.clear();
 
-        List<ReceivedUnit> roots = receivedUnitRepository
+        List<ReceivedUnitJpa> roots = receivedUnitRepositoryJpa
                 .findAllByWorkerSessionIdAndParentUnitIsNull(session.getId());
 
-        ReceivedUnit loadedPallet = roots.getFirst();
+        ReceivedUnitJpa loadedPallet = roots.getFirst();
         assertThat(loadedPallet.getChildUnits()).hasSize(1);
         assertThat(loadedPallet.getChildUnits().stream().toList().getFirst().getContents()).hasSize(1);
     }
@@ -171,28 +174,28 @@ class RepositoryQueryIT extends BaseIT {
     // Helpers
     // =============================================
 
-    private ReceivedUnit saveUnit(String lpn, ReceivedUnit parent) {
+    private ReceivedUnitJpa saveUnit(String lpn, ReceivedUnitJpa parent) {
         return saveUnitForSession(lpn, parent, session);
     }
 
-    private ReceivedUnit saveUnitForSession(String lpn, ReceivedUnit parent, WorkerReceivingSession s) {
-        ReceivedUnit unit = ReceivedUnit.assignToParentUnit(
+    private ReceivedUnitJpa saveUnitForSession(String lpn, ReceivedUnitJpa parent, WorkerReceivingSession s) {
+        ReceivedUnitJpa unit = ReceivedUnitJpa.assignToParentUnit(
                 new ScanHandlingUnitRequest(lpn),
                 s,
                 parent
         );
-        return receivedUnitRepository.save(unit);
+        return receivedUnitRepositoryJpa.save(unit);
     }
 
-    private ReceivedContent saveContent(ReceivedUnit unit, String sku, int qty) {
+    private ReceivedContentJpa saveContent(ReceivedUnitJpa unit, String sku, long qty) {
         return saveContentForUnit(unit, sku, qty);
     }
 
-    private ReceivedContent saveContentForUnit(ReceivedUnit unit, String sku, int qty) {
-        ReceivedContent content = ReceivedContent.assignToContainer(
+    private ReceivedContentJpa saveContentForUnit(ReceivedUnitJpa unit, String sku, long qty) {
+        ReceivedContentJpa content = ReceivedContentJpa.assignToContainer(
                 new ScanContentRequest(sku, qty),
                 unit
         );
-        return receivedContentRepository.save(content);
+        return receivedContentRepositoryJpa.save(content);
     }
 }

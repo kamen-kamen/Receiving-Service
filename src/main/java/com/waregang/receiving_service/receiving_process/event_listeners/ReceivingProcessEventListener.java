@@ -1,4 +1,4 @@
-package com.waregang.receiving_service.receiving_process.event_listener;
+package com.waregang.receiving_service.receiving_process.event_listeners;
 
 import com.waregang.receiving_service.integration.application.InventoryIntegrationService;
 import com.waregang.receiving_service.receiving_process.domain.event.WorkerSessionClosedEvent;

@@ -50,7 +50,7 @@ class InventoryKafkaAdapterIT extends BaseIT {
         var workerSessionId = receivingProcessService.joinReceiving(workerPrincipal, receiptId).workerSessionId();
         receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("PALLET-01"), workerPrincipal);
         receivingProcessService.scanHandlingUnit(new ScanHandlingUnitRequest("BOX-01"), workerPrincipal);
-        receivingProcessService.scanContent(new ScanContentRequest("SKU-123", 100), workerPrincipal);
+        receivingProcessService.scanContent(new ScanContentRequest("SKU-123", 100L), workerPrincipal);
         receivingProcessService.completeWorkerSession(workerPrincipal);
 
         // 2. WHEN: Триггер события — закрытие приемки менеджером

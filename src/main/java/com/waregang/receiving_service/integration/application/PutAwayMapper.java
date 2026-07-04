@@ -1,7 +1,7 @@
 package com.waregang.receiving_service.integration.application;
 
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContent;
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnit;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContentJpa;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnitJpa;
 import com.waregang.receiving_service.receiving_process.infrastructure.dto.ReceivedContentDto;
 import com.waregang.receiving_service.integration.infrastrusture.dto.ForwardPutAwayRequest;
 import com.waregang.receiving_service.receiving_process.infrastructure.dto.ReceivedUnitDto;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class PutAwayMapper {
 
     public ForwardPutAwayRequest toPutAwayRequestDto(
-            List<ReceivedUnit> rootUnits,
+            List<ReceivedUnitJpa> rootUnits,
             UUID workerSessionId,
             String occurredOn
     ) {
@@ -30,7 +30,7 @@ public class PutAwayMapper {
                 rootUnitDtos);
     }
 
-    private ReceivedUnitDto toReceivedUnitDto(ReceivedUnit unit) {
+    private ReceivedUnitDto toReceivedUnitDto(ReceivedUnitJpa unit) {
         // Рекурсивно мапим дочерние HU
         List<ReceivedUnitDto> childUnitDtos = unit.getChildUnits().stream()
                 .map(this::toReceivedUnitDto)
@@ -48,7 +48,7 @@ public class PutAwayMapper {
         );
     }
 
-    private ReceivedContentDto toReceivedContentDto(ReceivedContent content, String containerLpn) {
+    private ReceivedContentDto toReceivedContentDto(ReceivedContentJpa content, String containerLpn) {
         return new ReceivedContentDto(
                 containerLpn, // Используем LPN, который уже есть в памяти
                 content.getSku(),

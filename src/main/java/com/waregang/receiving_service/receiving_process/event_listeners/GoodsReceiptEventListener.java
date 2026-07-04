@@ -1,4 +1,4 @@
-package com.waregang.receiving_service.receiving_process.event_listener;
+package com.waregang.receiving_service.receiving_process.event_listeners;
 
 import com.waregang.receiving_service.inbound_delivery.application.InboundDeliveryService;
 import com.waregang.receiving_service.integration.application.DiscrepanciesReportService;

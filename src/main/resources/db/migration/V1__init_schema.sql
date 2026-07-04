@@ -58,7 +58,7 @@ create table if not exists contents (
     id                  uuid         not null,
     container_unit_id   uuid         not null,
     sku                 varchar(255) not null,
-    quantity            integer      not null,
+    quantity            bigint      not null,
 
     constraint pk_contents primary key (id),
     constraint fk_contents_handling_unit
@@ -132,7 +132,7 @@ create table if not exists received_contents (
     id                uuid         not null,
     container_unit_id uuid,
     sku               varchar(255) not null,
-    quantity          integer      not null,
+    quantity          bigint      not null,
 
     constraint pk_received_contents primary key (id),
     constraint fk_received_contents_rhu

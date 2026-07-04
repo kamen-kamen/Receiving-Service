@@ -3,13 +3,13 @@ package com.waregang.receiving_service.receiving_process.domain.model;
 import com.waregang.receiving_service.common.IdGenerator;
 import com.waregang.receiving_service.common.exception_handling.AppException;
 import com.waregang.receiving_service.common.exception_handling.error_code.ReceivingErrorCode;
-import com.waregang.receiving_service.security.UserPrincipal;
+import com.waregang.receiving_service.common.infrastructure.AggregateRoot;
 import com.waregang.receiving_service.receiving_process.domain.event.WorkerSessionClosedEvent;
-import jakarta.persistence.*;
-import lombok.*;
+import com.waregang.receiving_service.security.UserPrincipal;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.jspecify.annotations.Nullable;
-import org.springframework.data.domain.AbstractAggregateRoot;
-import org.springframework.data.domain.Persistable;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -17,43 +17,16 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 
-@Entity
-@Table(name = "worker_receiving_sessions", uniqueConstraints = {
-        @UniqueConstraint(
-                name = "uk_worker_active_session",
-                columnNames = {"worker_id", "worker_receiving_session_status"}
-        )
-})
-public class WorkerReceivingSession extends AbstractAggregateRoot<WorkerReceivingSession> implements Persistable<UUID> {
-    @Id
-    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
+
+public class WorkerReceivingSession extends AggregateRoot {
     private UUID id;
-
-    @Column(name = "worker_id", nullable = false, updatable = false)
     private UUID workerId;
-
-    @Column(name = "receipt_id", nullable = false, updatable = false)
     private UUID receiptId;
-
-    @Column(name = "inbound_delivery_id", nullable = false, updatable = false)
     private UUID inboundDeliveryId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "worker_receiving_session_status", nullable = false)
     private WorkerReceivingSessionStatus status;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "receiving_mode" ,nullable = false, updatable = false)
     private ReceivingMode receivingMode;
-
-    @Nullable
-    @Column(name = "current_unit_lpn_path")
     private String currentUnitLpnPath;
-
-    @Nullable
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "current_unit_id")
-    private ReceivedUnit currentUnit;
+    private ReceivedUnitJpa currentUnit;
 
     private WorkerReceivingSession(
             UserPrincipal user,
@@ -77,9 +50,30 @@ public class WorkerReceivingSession extends AbstractAggregateRoot<WorkerReceivin
     ) {
         return new WorkerReceivingSession(user, receiptId, receivingMode, inboundDeliveryId);
     }
+    
+    public static WorkerReceivingSession toDomain(
+            UUID id,
+            UUID workerId,
+            UUID receiptId,
+            UUID inboundDeliveryId,
+            WorkerReceivingSessionStatus status,
+            ReceivingMode receivingMode,
+            String currentUnitLpnPath,
+            ReceivedUnitJpa currentUnit
+    ) {
+        var session = new WorkerReceivingSession();
+        session.id = id;
+        session.workerId = workerId;
+        session.receiptId = receiptId;
+        session.inboundDeliveryId = inboundDeliveryId;
+        session.status = status;
+        session.receivingMode = receivingMode;
+        session.currentUnitLpnPath = currentUnitLpnPath;
+        session.currentUnit = currentUnit;
+        return session;
+    }
 
     @Nullable
-    @Transient
     public String getCurrentUnitLpn() {
         if (currentUnitLpnPath == null) {
             return null;
@@ -108,7 +102,7 @@ public class WorkerReceivingSession extends AbstractAggregateRoot<WorkerReceivin
                     .with("worker_session_id", this.id);
     }
 
-    public void navigateToUnit(ReceivedUnit newCurrentUnit) {
+    public void navigateToUnit(ReceivedUnitJpa newCurrentUnit) {
         if (this.currentUnitLpnPath == null)
             this.currentUnitLpnPath = "/" + newCurrentUnit.getLpn();
         else
@@ -122,8 +116,8 @@ public class WorkerReceivingSession extends AbstractAggregateRoot<WorkerReceivin
             throw AppException.of(ReceivingErrorCode.WORKER_SESSION_INVALID_STATE)
                     .with("reason", "Cannot go back, no unit has been scanned yet.");
         }
-        
-        ReceivedUnit parent = this.currentUnit.getParentUnit();
+
+        ReceivedUnitJpa parent = this.currentUnit.getParentUnit();
         if (parent == null) {
             throw AppException.of(ReceivingErrorCode.PREVIOUS_UNIT_NOT_FOUND)
                     .with("current_unit_id", this.currentUnit.getId());
@@ -135,7 +129,7 @@ public class WorkerReceivingSession extends AbstractAggregateRoot<WorkerReceivin
     }
 
     public void complete() {
-        if (this.status ==  WorkerReceivingSessionStatus.COMPLETED)
+        if (this.status == WorkerReceivingSessionStatus.COMPLETED)
             return;
 
         this.status = WorkerReceivingSessionStatus.COMPLETED;
@@ -154,19 +148,5 @@ public class WorkerReceivingSession extends AbstractAggregateRoot<WorkerReceivin
         if (this == o) return true;
         if (!(o instanceof WorkerReceivingSession other)) return false;
         return Objects.equals(this.id, other.id);
-    }
-
-    @Transient
-    private boolean isNew = true;
-
-    @Override
-    public boolean isNew() {
-        return isNew;
-    }
-
-    @PostPersist
-    @PostLoad
-    void markNotNew() {
-        this.isNew = false;
     }
 }

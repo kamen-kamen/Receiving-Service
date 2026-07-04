@@ -14,5 +14,6 @@ public interface ContentRepository extends JpaRepository<Content, UUID> {
             JOIN c.containerUnit hu
             WHERE c.sku = :sku AND hu.inboundDelivery.id = :inboundDeliveryId
             """)
-    boolean existsBySkuAndInboundDeliveryId(@Param("sku") String sku, @Param("inboundDeliveryId") UUID inboundDeliveryId);
+    boolean existsBySkuAndInboundDeliveryId(@Param("sku") String sku,
+                                            @Param("inboundDeliveryId") UUID inboundDeliveryId);
 }
