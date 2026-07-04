@@ -25,13 +25,13 @@ public class Content implements Persistable<UUID> {
     private String sku;
 
     @Column(name = "quantity", nullable = false)
-    private Integer quantity;
+    private Long quantity;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "container_unit_id", nullable = false)
     private HandlingUnit containerUnit;
 
-    Content(String sku, int quantity, HandlingUnit containerUnit) {
+    Content(String sku, Long quantity, HandlingUnit containerUnit) {
         this.id = IdGenerator.generate();
         this.sku = sku;
         this.quantity = quantity;

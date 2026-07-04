@@ -64,7 +64,7 @@ public class HandlingUnit implements Persistable<UUID> {
         child.parentUnit = this;
     }
 
-    public void fillWithContent(String sku, int quantity) {
+    public void fillWithContent(String sku, Long quantity) {
         this.contents.add(new Content(sku, quantity, this));
     }
 
