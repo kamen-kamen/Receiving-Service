@@ -15,11 +15,8 @@ import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUni
 import com.waregang.receiving_service.receiving_process.domain.model.WorkerReceivingSession;
 import com.waregang.receiving_service.receiving_process.domain.ports.GoodsReceiptRepositoryPort;
 import com.waregang.receiving_service.receiving_process.domain.ports.WorkerReceivingSessionRepositoryPort;
-import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.WorkerReceivingSessionJpa;
-import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.GoodsReceiptRepositoryJpa;
 import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedContentRepositoryJpa;
 import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedUnitRepositoryJpa;
-import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.WorkerReceivingSessionRepositoryJpa;
 import com.waregang.receiving_service.integration.infrastrusture.dto.SkuQuantityDto;
 import com.waregang.receiving_service.security.User;
 import com.waregang.receiving_service.security.UserPrincipal;
@@ -57,11 +54,13 @@ class RepositoryQueryIT extends BaseIT {
     @BeforeEach
     void setUp() {
         delivery = DeliveryMother.withNestedTree();
-        deliveryRepository.save(delivery);
+        delivery = deliveryRepository.save(delivery);
 
         receipt = ReceivingMother.receipt(delivery);
         receiptRepository.save(receipt);
         receiptId = receipt.getId();
+
+        // entityManager.flush(); just for the jdbc adapter test
 
         session = WorkerSessionBuilder.aSession(receipt)
                 .withWorker(workerPrincipal)
@@ -187,11 +186,11 @@ class RepositoryQueryIT extends BaseIT {
         return receivedUnitRepositoryJpa.save(unit);
     }
 
-    private ReceivedContentJpa saveContent(ReceivedUnitJpa unit, String sku, long qty) {
+    private ReceivedContentJpa saveContent(ReceivedUnitJpa unit, String sku, Long qty) {
         return saveContentForUnit(unit, sku, qty);
     }
 
-    private ReceivedContentJpa saveContentForUnit(ReceivedUnitJpa unit, String sku, long qty) {
+    private ReceivedContentJpa saveContentForUnit(ReceivedUnitJpa unit, String sku, Long qty) {
         ReceivedContentJpa content = ReceivedContentJpa.assignToContainer(
                 new ScanContentRequest(sku, qty),
                 unit

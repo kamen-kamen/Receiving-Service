@@ -10,11 +10,10 @@ import com.waregang.receiving_service.receiving_process.api.dto.StartReceivingRe
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceipt;
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceiptStatus;
 import com.waregang.receiving_service.receiving_process.domain.model.WorkerReceivingSessionStatus;
-import com.waregang.receiving_service.receiving_process.infrastructure.dto.GoodsReceiptDto;
 import com.waregang.receiving_service.receiving_process.domain.ports.GoodsReceiptRepositoryPort;
 import com.waregang.receiving_service.receiving_process.domain.ports.WorkerReceivingSessionRepositoryPort;
+import com.waregang.receiving_service.receiving_process.infrastructure.dto.GoodsReceiptDto;
 import com.waregang.receiving_service.security.UserPrincipal;
-import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -29,6 +28,7 @@ public class GoodsReceiptService {
     private final InboundDeliveryService inboundDeliveryService;
 
     private final GoodsReceiptRepositoryPort goodsReceiptRepositoryPort;
+
     private final WorkerReceivingSessionRepositoryPort workerSessionRepository;
 
     // TODO:  mb add retryable later

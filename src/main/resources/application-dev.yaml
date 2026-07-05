@@ -1,3 +1,7 @@
+app:
+  adapters:
+    worker-receiving-session-repository-adapter: "jpa"
+
 spring:
   security:
     jwt:

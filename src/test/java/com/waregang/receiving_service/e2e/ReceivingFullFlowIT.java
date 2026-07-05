@@ -90,7 +90,7 @@ public class ReceivingFullFlowIT extends BaseIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Сессия воркера не найдена"));
         assertThat(session.getStatus()).isEqualTo(WorkerReceivingSessionStatus.COMPLETED);
-        assertThat(session.getCurrentUnit()).isNull();
+        assertThat(session.getCurrentUnitId()).isNull();
         assertThat(session.getCurrentUnitLpnPath()).isNull();
 
         // Проверяем, что юниты сохранились и иерархия верна

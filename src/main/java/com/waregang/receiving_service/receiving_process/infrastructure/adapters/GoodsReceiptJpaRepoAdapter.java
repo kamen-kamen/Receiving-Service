@@ -20,7 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 
 @Repository
-public class GoodsReceiptRepositoryAdapter implements GoodsReceiptRepositoryPort {
+public class GoodsReceiptJpaRepoAdapter implements GoodsReceiptRepositoryPort {
     private final GoodsReceiptRepositoryJpa repositoryJpa;
 
     private final GoodsReceiptMapper mapper;
