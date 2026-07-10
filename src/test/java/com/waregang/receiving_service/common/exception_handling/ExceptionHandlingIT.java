@@ -1,6 +1,7 @@
 package com.waregang.receiving_service.common.exception_handling;
 
 
+import com.waregang.receiving_service.common.idempotency.IdempotencyService;
 import com.waregang.receiving_service.integration.IntegrationTestConfig;
 import com.waregang.receiving_service.receiving_process.api.GoodsReceiptController;
 import com.waregang.receiving_service.receiving_process.api.dto.StartReceivingRequest;
@@ -40,6 +41,9 @@ public class ExceptionHandlingIT{
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private IdempotencyService idempotencyService;
 
     @Autowired
     MockMvcTester mockMvcTester;

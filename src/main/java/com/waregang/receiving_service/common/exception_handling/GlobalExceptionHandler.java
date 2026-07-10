@@ -1,5 +1,6 @@
 package com.waregang.receiving_service.common.exception_handling;
 
+import com.waregang.receiving_service.common.idempotency.IdempotencyKeyConflictException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,12 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private final ProblemDetailSimpleFactory problemDetailFactory;
+
+    @ExceptionHandler(IdempotencyKeyConflictException.class)
+    public ProblemDetail handleIdempotencyKeyConflict(IdempotencyKeyConflictException ex) {
+        log.warn("Handling idempotency key conflict: {}", ex.getMessage());
+        return problemDetailFactory.create(ex);
+    }
 
     @ExceptionHandler(AppException.class)
     ProblemDetail handleBusinessException(AppException ex) {

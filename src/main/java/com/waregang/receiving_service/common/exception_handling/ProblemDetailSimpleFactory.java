@@ -1,6 +1,7 @@
 package com.waregang.receiving_service.common.exception_handling;
 
 import com.waregang.receiving_service.common.exception_handling.error_code.ErrorCode;
+import com.waregang.receiving_service.common.idempotency.IdempotencyKeyConflictException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,14 @@ public class ProblemDetailSimpleFactory {
         pd.setProperty("timestamp", Instant.now());
 
         return pd;
+    }
+
+    public ProblemDetail create(IdempotencyKeyConflictException ex) {
+        return baseProblemDetail(
+                HttpStatus.CONFLICT,
+                "Idempotency key conflict",
+                ex.getMessage()
+        );
     }
 
     public ProblemDetail create(AppException ex) {

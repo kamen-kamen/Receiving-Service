@@ -67,7 +67,7 @@ public class GoodsReceiptService {
         }
 
         // GoodsReceipt is a point of synchronization for itself and WorkerReceivingSession:
-        // fetching worker receiving session without locks because its creation is locked on GoodsReceipt as well
+        // checking worker receiving session without locks because its creation is locked on GoodsReceipt as well
         if (workerSessionRepository.existsByReceiptIdAndStatus(
                 receiptId,
                 WorkerReceivingSessionStatus.IN_PROCESS

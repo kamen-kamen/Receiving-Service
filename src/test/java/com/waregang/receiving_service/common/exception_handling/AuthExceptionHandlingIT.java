@@ -1,5 +1,6 @@
 package com.waregang.receiving_service.common.exception_handling;
 
+import com.waregang.receiving_service.common.idempotency.IdempotencyService;
 import com.waregang.receiving_service.integration.IntegrationTestConfig;
 import com.waregang.receiving_service.security.api.AuthController;
 import com.waregang.receiving_service.security.application.AuthService;
@@ -39,6 +40,9 @@ public class AuthExceptionHandlingIT {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private IdempotencyService idempotencyService;
 
     @Test
     @DisplayName("Should return Problem Detail for unauthorized")
