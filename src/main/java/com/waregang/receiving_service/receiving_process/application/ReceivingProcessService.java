@@ -12,6 +12,7 @@ import com.waregang.receiving_service.security.UserPrincipal;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,23 +48,9 @@ public class ReceivingProcessService {
                 receipt.getInboundDelivery().getId()
         );
 
-        saveWorkerReceivingSession(newSession);
+        WorkerReceivingSession savedSession= workerSessionRepository.save(newSession);
 
-        return new JoinReceivingResponse(newSession.getId());
-    }
-
-    private void saveWorkerReceivingSession(WorkerReceivingSession session) {
-        try {
-            workerSessionRepository.save(session);
-            workerSessionRepository.flush();
-        } catch (DataIntegrityViolationException e) {
-            if (e.getRootCause() instanceof ConstraintViolationException cve) {
-                if ("uk_worker_active_session".equals(cve.getConstraintName()))
-                    throw AppException.of(ReceivingErrorCode.WORKER_ALREADY_JOINED);
-            }
-
-            throw e;
-        }
+        return new JoinReceivingResponse(savedSession.getId());
     }
 
     @Transactional
@@ -77,15 +64,15 @@ public class ReceivingProcessService {
         inboundDeliveryService.validateScannedHuAgainstAsn(scanRequest.lpn(), session.getInboundDeliveryId());
 
         ReceivedUnitJpa proxyParentUnit = null;
-        if (session.getCurrentUnit() != null)
-            proxyParentUnit = entityManager.getReference(ReceivedUnitJpa.class, session.getCurrentUnit().getId());
+        if (session.getCurrentUnitId() != null)
+            proxyParentUnit = entityManager.getReference(ReceivedUnitJpa.class, session.getCurrentUnitId());
 
 
         ReceivedUnitJpa unit = ReceivedUnitJpa.assignToParentUnit(scanRequest, session, proxyParentUnit);
 
         saveReceivedUnit(unit);
 
-        session.navigateToUnit(unit);
+        session.navigateToUnit(unit.getId(), unit.getLpn());
         workerSessionRepository.update(session);
 
         return new ScanHandlingUnitResponse(session.getCurrentUnitLpnPath());
@@ -120,7 +107,7 @@ public class ReceivingProcessService {
                 session.getInboundDeliveryId()
         );
 
-        ReceivedUnitJpa proxyContainer = entityManager.getReference(ReceivedUnitJpa.class, session.getCurrentUnit().getId());
+        ReceivedUnitJpa proxyContainer = entityManager.getReference(ReceivedUnitJpa.class, session.getCurrentUnitId());
         ReceivedContentJpa content = ReceivedContentJpa.assignToContainer(scanRequest, proxyContainer);
 
         saveReceivedContent(content);
@@ -144,16 +131,19 @@ public class ReceivingProcessService {
     }
 
     @Transactional
-    public NavigationBackResponse getBackToPreviousUnit(
-            UserPrincipal worker
-    ) {
+    public NavigationBackResponse getBackToPreviousUnit(UserPrincipal worker) {
         WorkerReceivingSession session = findActiveSessionByWorkerWithLock(worker);
-        session.navigateBack();
+
+        UUID parentUnitId = receivedUnitRepositoryJpa.findById(session.getCurrentUnitId())
+                .map(ReceivedUnitJpa::getParentUnit)
+                .map(ReceivedUnitJpa::getId)
+                .orElse(null);
+
+        session.navigateBack(parentUnitId);
         workerSessionRepository.update(session);
 
         return new NavigationBackResponse(session.getCurrentUnitLpnPath());
     }
-
 
     @Transactional
     public void completeWorkerSession(UserPrincipal worker) {

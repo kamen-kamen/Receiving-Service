@@ -9,7 +9,10 @@ import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entit
 import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.WorkerReceivingSessionRepositoryJpa;
 import com.waregang.receiving_service.receiving_process.infrastructure.mappers.WorkerReceivingSessionMapper;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -20,7 +23,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 
 @Repository
-public class WorkerReceivingSessionRepositoryAdapter implements WorkerReceivingSessionRepositoryPort {
+@ConditionalOnProperty(
+        name = "app.adapters.worker-receiving-session-repository-adapter",
+        havingValue = "jpa")
+public class WorkerReceivingSessionJpaRepoAdapter implements WorkerReceivingSessionRepositoryPort {
     private final WorkerReceivingSessionRepositoryJpa repositoryJpa;
     private final WorkerReceivingSessionMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
@@ -35,15 +41,21 @@ public class WorkerReceivingSessionRepositoryAdapter implements WorkerReceivingS
         return repositoryJpa.existsByWorkerIdAndStatus(workerId, workerReceivingSessionStatus);
     }
 
-    //TODO: void or domain entity return ?
     @Override
     public WorkerReceivingSession save(WorkerReceivingSession session) {
         WorkerReceivingSessionJpa saved = repositoryJpa.save(mapper.toJpa(session));
+
+        try {
+            repositoryJpa.flush();
+        } catch (DataIntegrityViolationException dive) {
+           throw translateDataIntegrityViolationExc(dive);
+        }
 
         session.pullDomainEvents().forEach(eventPublisher::publishEvent);
         
         return mapper.toDomain(saved);
     }
+
 
     @Override
     public WorkerReceivingSession update(WorkerReceivingSession session) {
@@ -53,9 +65,28 @@ public class WorkerReceivingSessionRepositoryAdapter implements WorkerReceivingS
 
         mapper.updateJpaFromDomain(sessionJpa, session);
 
+        try {
+            repositoryJpa.flush();
+        } catch (DataIntegrityViolationException dive) {
+            throw translateDataIntegrityViolationExc(dive);
+        }
+
         session.pullDomainEvents().forEach(eventPublisher::publishEvent);
 
         return mapper.toDomain(sessionJpa);
+    }
+
+
+    private AppException translateDataIntegrityViolationExc(DataIntegrityViolationException e) {
+        if (e.getRootCause() instanceof ConstraintViolationException cve && cve.getConstraintName() != null) {
+            return switch (cve.getConstraintName()) {
+                case "uk_worker_active_session" -> AppException.of(ReceivingErrorCode.WORKER_ALREADY_JOINED);
+
+                default -> throw new IllegalStateException("Unexpected value: " + cve.getConstraintName(), e);
+            };
+        }
+
+        throw e;
     }
 
     @Override

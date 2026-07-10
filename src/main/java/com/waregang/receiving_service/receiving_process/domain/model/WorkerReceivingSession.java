@@ -26,7 +26,7 @@ public class WorkerReceivingSession extends AggregateRoot {
     private WorkerReceivingSessionStatus status;
     private ReceivingMode receivingMode;
     private String currentUnitLpnPath;
-    private ReceivedUnitJpa currentUnit;
+    private UUID currentUnitId;
 
     private WorkerReceivingSession(
             UserPrincipal user,
@@ -59,7 +59,7 @@ public class WorkerReceivingSession extends AggregateRoot {
             WorkerReceivingSessionStatus status,
             ReceivingMode receivingMode,
             String currentUnitLpnPath,
-            ReceivedUnitJpa currentUnit
+            UUID currentUnitId
     ) {
         var session = new WorkerReceivingSession();
         session.id = id;
@@ -69,7 +69,7 @@ public class WorkerReceivingSession extends AggregateRoot {
         session.status = status;
         session.receivingMode = receivingMode;
         session.currentUnitLpnPath = currentUnitLpnPath;
-        session.currentUnit = currentUnit;
+        session.currentUnitId = currentUnitId;
         return session;
     }
 
@@ -96,45 +96,35 @@ public class WorkerReceivingSession extends AggregateRoot {
                     .with("expected_status", WorkerReceivingSessionStatus.IN_PROCESS)
                     .with("worker_session_id", this.id);
 
-        if (currentUnitLpnPath == null || currentUnit == null)
+        if (currentUnitLpnPath == null || currentUnitId == null)
             throw AppException.of(ReceivingErrorCode.EMPTY_LPN_NOT_ALLOWED)
                     .with("receiving_mode", this.receivingMode)
                     .with("worker_session_id", this.id);
     }
 
-    public void navigateToUnit(ReceivedUnitJpa newCurrentUnit) {
-        if (this.currentUnitLpnPath == null)
-            this.currentUnitLpnPath = "/" + newCurrentUnit.getLpn();
-        else
-            this.currentUnitLpnPath = this.currentUnitLpnPath + "/" + newCurrentUnit.getLpn();
-
-        this.currentUnit = newCurrentUnit;
+    public void navigateToUnit(UUID newCurrentUnitId, String lpnSegment) {
+        this.currentUnitLpnPath = (this.currentUnitLpnPath == null)
+                ? "/" + lpnSegment
+                : this.currentUnitLpnPath + "/" + lpnSegment;
+        this.currentUnitId = newCurrentUnitId;
     }
 
-    public void navigateBack() {
-        if (this.currentUnit == null) {
+    public void navigateBack(@Nullable UUID parentUnitId) {
+        if (this.currentUnitId == null) {
             throw AppException.of(ReceivingErrorCode.WORKER_SESSION_INVALID_STATE)
                     .with("reason", "Cannot go back, no unit has been scanned yet.");
         }
 
-        ReceivedUnitJpa parent = this.currentUnit.getParentUnit();
-        if (parent == null) {
-            throw AppException.of(ReceivingErrorCode.PREVIOUS_UNIT_NOT_FOUND)
-                    .with("current_unit_id", this.currentUnit.getId());
-        }
-
         int lastSlash = this.currentUnitLpnPath.lastIndexOf('/');
-        this.currentUnitLpnPath = this.currentUnitLpnPath.substring(0, lastSlash);
-        this.currentUnit = parent;
+        this.currentUnitLpnPath = lastSlash > 0 ? this.currentUnitLpnPath.substring(0, lastSlash) : null;
+        this.currentUnitId = parentUnitId;
     }
 
     public void complete() {
-        if (this.status == WorkerReceivingSessionStatus.COMPLETED)
-            return;
-
+        if (this.status == WorkerReceivingSessionStatus.COMPLETED) return;
         this.status = WorkerReceivingSessionStatus.COMPLETED;
         this.currentUnitLpnPath = null;
-        this.currentUnit = null;
+        this.currentUnitId = null;
         registerEvent(new WorkerSessionClosedEvent(this.id));
     }
 

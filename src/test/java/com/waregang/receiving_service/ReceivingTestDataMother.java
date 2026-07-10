@@ -8,7 +8,6 @@ import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceip
 import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContentJpa;
 import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnitJpa;
 import com.waregang.receiving_service.receiving_process.domain.model.WorkerReceivingSession;
-import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.WorkerReceivingSessionJpa;
 import com.waregang.receiving_service.security.UserPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -180,12 +179,12 @@ public class ReceivingTestDataMother {
     public static ReceivedUnitJpa scanUnit(WorkerReceivingSession session, ReceivedUnitJpa proxyParent, String lpn) {
         ScanHandlingUnitRequest request = new ScanHandlingUnitRequest(lpn);
         ReceivedUnitJpa unit = ReceivedUnitJpa.assignToParentUnit(request, session, proxyParent);
-        session.navigateToUnit(unit); // Обновляем состояние сессии, как это делает сервис
+        session.navigateToUnit(unit.getId(), unit.getLpn()); // Обновляем состояние сессии, как это делает сервис
         return unit;
     }
 
     public static ReceivedContentJpa scanContent(ReceivedUnitJpa currentUnit, String sku, Long quantity) {
-        ScanContentRequest request = new ScanContentRequest(sku, quantity);
+        ScanContentRequest request = new ScanContentRequest(sku, (long) quantity.intValue());
         return ReceivedContentJpa.assignToContainer(request, currentUnit);
     }
 

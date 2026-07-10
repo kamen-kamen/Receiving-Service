@@ -1,5 +1,6 @@
 package com.waregang.receiving_service.receiving_process.api;
 
+import com.waregang.receiving_service.common.idempotency.Idempotent;
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceiptStatus;
 import com.waregang.receiving_service.security.UserPrincipal;
 import com.waregang.receiving_service.receiving_process.api.dto.GetOpenedReceiptsResponse;
@@ -23,6 +24,7 @@ import java.util.UUID;
 public class GoodsReceiptController {
     private final GoodsReceiptService service;
 
+    @Idempotent
     @PostMapping("/open")
     @PreAuthorize("hasAuthority('BOX_MANAGER')")
     public ResponseEntity<StartReceivingResponse> startReceiving(

@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PACKAGE)
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
 @Entity
 @Table(name = "received_handling_units",
         uniqueConstraints = {
