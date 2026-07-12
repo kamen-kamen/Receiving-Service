@@ -1,6 +1,5 @@
-package com.waregang.receiving_service.receiving_process.infrastructure.dto;
+package com.waregang.receiving_service.receiving_process.domain.dto;
 
-import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 public record ReceivedUnitDto(

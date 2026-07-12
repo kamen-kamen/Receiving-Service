@@ -41,6 +41,13 @@ public class InboundDeliveryService {
                         .with("asn_number", asnNumber));
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    public InboundDelivery findById(UUID id) {
+        return inboundDeliveryRepository.findById(id)
+                .orElseThrow(() -> AppException.of(InboundDeliveryErrorCode.DELIVERY_NOT_FOUND)
+                        .with("inbound_delivery_id", id));
+    }
+
     @Transactional(readOnly = true)
     public void validateScannedHuAgainstAsn(String scannedLpn, UUID inboundDeliveryId) {
         if (!handlingUnitRepository.existsByLpnAndInboundDeliveryId(scannedLpn, inboundDeliveryId)) {

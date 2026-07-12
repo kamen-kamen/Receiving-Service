@@ -2,9 +2,9 @@ package com.waregang.receiving_service.integration.application;
 
 import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContentJpa;
 import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnitJpa;
-import com.waregang.receiving_service.receiving_process.infrastructure.dto.ReceivedContentDto;
+import com.waregang.receiving_service.receiving_process.domain.dto.ReceivedContentDto;
 import com.waregang.receiving_service.integration.infrastrusture.dto.ForwardPutAwayRequest;
-import com.waregang.receiving_service.receiving_process.infrastructure.dto.ReceivedUnitDto;
+import com.waregang.receiving_service.receiving_process.domain.dto.ReceivedUnitDto;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

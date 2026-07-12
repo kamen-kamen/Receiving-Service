@@ -4,7 +4,7 @@ import com.waregang.receiving_service.integration.application.PutAwayMapper;
 import com.waregang.receiving_service.integration.infrastrusture.dto.ForwardPutAwayRequest;
 import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContentJpa;
 import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnitJpa;
-import com.waregang.receiving_service.receiving_process.infrastructure.dto.ReceivedUnitDto;
+import com.waregang.receiving_service.receiving_process.domain.dto.ReceivedUnitDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -1,9 +1,6 @@
 package com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities;
 
-import com.waregang.receiving_service.common.IdGenerator;
-import com.waregang.receiving_service.inbound_delivery.domain.model.InboundDelivery;
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceiptStatus;
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivingMode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -36,33 +33,30 @@ public class GoodsReceiptJpa implements Persistable<UUID> {
     @Column(name = "manager_id", nullable = false)
     private UUID managerId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "inbound_delivery_id", nullable = false)
-    private InboundDelivery inboundDelivery;
+    @Column(name = "inbound_delivery_id", nullable = false)
+    private UUID inboundDeliveryId;
+
+    @Column(name = "warehouse_id")
+    private String warehouseId;
+
 
     private GoodsReceiptJpa(UUID id,
-                    GoodsReceiptStatus status,
-                    String gateNumber,
-                    UUID managerId,
-                    InboundDelivery inboundDelivery
+                            GoodsReceiptStatus status,
+                            String gateNumber,
+                            UUID managerId,
+                            UUID inboundDeliveryId,
+                            String warehouseId
     ) {
         this.id = id;
         this.status = status;
         this.gateNumber = gateNumber;
         this.managerId = managerId;
-        this.inboundDelivery = inboundDelivery;
+        this.inboundDeliveryId = inboundDeliveryId;
+        this.warehouseId = warehouseId;
     }
 
-    public static GoodsReceiptJpa fromDomain(UUID id, GoodsReceiptStatus status, String gateNumber, UUID managerId, InboundDelivery inboundDelivery) {
-        return new GoodsReceiptJpa(id, status, gateNumber, managerId, inboundDelivery);
-    }
-
-    public String getWarehouseId() {
-        return this.inboundDelivery.getWarehouseId();
-    }
-
-    public ReceivingMode getReceivingMode() {
-        return this.inboundDelivery.getReceivingMode();
+    public static GoodsReceiptJpa fromDomain(UUID id, GoodsReceiptStatus status, String gateNumber, UUID managerId, UUID inboundDeliveryId, String warehouseId) {
+        return new GoodsReceiptJpa(id, status, gateNumber, managerId, inboundDeliveryId, warehouseId);
     }
 
     @Override

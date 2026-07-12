@@ -1,4 +1,4 @@
-package com.waregang.receiving_service.receiving_process.infrastructure.dto;
+package com.waregang.receiving_service.receiving_process.domain.dto;
 
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceiptStatus;
 import com.waregang.receiving_service.receiving_process.domain.model.ReceivingMode;

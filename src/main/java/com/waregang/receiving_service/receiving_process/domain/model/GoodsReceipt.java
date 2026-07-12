@@ -4,11 +4,9 @@ import com.waregang.receiving_service.common.IdGenerator;
 import com.waregang.receiving_service.common.exception_handling.AppException;
 import com.waregang.receiving_service.common.exception_handling.error_code.ReceivingErrorCode;
 import com.waregang.receiving_service.common.infrastructure.AggregateRoot;
-import com.waregang.receiving_service.inbound_delivery.domain.model.InboundDelivery;
 import com.waregang.receiving_service.receiving_process.domain.event.ClosedGoodsReceiptEvent;
 import com.waregang.receiving_service.receiving_process.domain.event.OpenedGoodsReceiptEvent;
 import com.waregang.receiving_service.security.UserPrincipal;
-import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,34 +16,39 @@ import java.util.UUID;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-
 public class GoodsReceipt extends AggregateRoot {
     private UUID id;
     private GoodsReceiptStatus status;
     private String gateNumber;
     private UUID managerId;
-    private InboundDelivery inboundDelivery; // mb it should not be here bc its other BC
+    private UUID inboundDeliveryId;
+    private String warehouseId;
 
     private GoodsReceipt(
             UUID managerId,
-            InboundDelivery delivery,
+            UUID inboundDeliveryId,
+            String warehouseId,
             String gateNumber
     ) {
         this.id = IdGenerator.generate();
         this.status = GoodsReceiptStatus.OPEN;
         this.managerId = managerId;
-        this.inboundDelivery = delivery;
+        this.inboundDeliveryId = inboundDeliveryId;
+        this.warehouseId = warehouseId;
         this.gateNumber = gateNumber;
     }
 
     public static GoodsReceipt open(
             UUID managerId,
             String managerNickname,
-            InboundDelivery delivery,
+            UUID inboundDeliveryId,
+            String warehouseId,
+            ReceivingMode receivingMode, // Passed for the event
+            String asnNumber,           // Passed for the event
             String gateNumber
     ) {
-        GoodsReceipt receipt = new GoodsReceipt(managerId, delivery, gateNumber);
-        receipt.registerOpenedEvent(managerNickname);
+        GoodsReceipt receipt = new GoodsReceipt(managerId, inboundDeliveryId, warehouseId, gateNumber);
+        receipt.registerOpenedEvent(managerNickname, asnNumber, receivingMode);
         return receipt;
     }
 
@@ -54,26 +57,27 @@ public class GoodsReceipt extends AggregateRoot {
             GoodsReceiptStatus status,
             String gateNumber,
             UUID managerId,
-            InboundDelivery inboundDelivery
+            UUID inboundDeliveryId,
+            String warehouseId
     ) {
         GoodsReceipt receipt = new GoodsReceipt();
         receipt.id = id;
         receipt.status = status;
         receipt.gateNumber = gateNumber;
         receipt.managerId = managerId;
-        receipt.inboundDelivery = inboundDelivery;
-
+        receipt.inboundDeliveryId = inboundDeliveryId;
+        receipt.warehouseId = warehouseId;
         return receipt;
     }
 
-    private void registerOpenedEvent(String managerNickname) {
+    private void registerOpenedEvent(String managerNickname, String asnNumber, ReceivingMode receivingMode) {
         registerEvent(new OpenedGoodsReceiptEvent(
                 this.id,
-                this.inboundDelivery.getAsnNumber(),
+                asnNumber,
                 this.gateNumber,
-                this.inboundDelivery.getWarehouseId(),
+                this.warehouseId,
                 managerNickname,
-                this.inboundDelivery.getReceivingMode()
+                receivingMode
         ));
     }
 
@@ -103,17 +107,9 @@ public class GoodsReceipt extends AggregateRoot {
     private void registerClosedEvent() {
         registerEvent(new ClosedGoodsReceiptEvent(
                 this.id,
-                this.inboundDelivery.getId(),
+                this.inboundDeliveryId,
                 this.gateNumber
         ));
-    }
-
-    public String getWarehouseId() {
-        return this.inboundDelivery.getWarehouseId();
-    }
-
-    public ReceivingMode getReceivingMode() {
-        return this.inboundDelivery.getReceivingMode();
     }
 
     @Override

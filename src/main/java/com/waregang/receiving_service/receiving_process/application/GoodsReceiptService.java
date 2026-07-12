@@ -12,7 +12,7 @@ import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceip
 import com.waregang.receiving_service.receiving_process.domain.model.WorkerReceivingSessionStatus;
 import com.waregang.receiving_service.receiving_process.domain.ports.GoodsReceiptRepositoryPort;
 import com.waregang.receiving_service.receiving_process.domain.ports.WorkerReceivingSessionRepositoryPort;
-import com.waregang.receiving_service.receiving_process.infrastructure.dto.GoodsReceiptDto;
+import com.waregang.receiving_service.receiving_process.domain.dto.GoodsReceiptDto;
 import com.waregang.receiving_service.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -44,7 +44,10 @@ public class GoodsReceiptService {
         GoodsReceipt receipt = GoodsReceipt.open(
                 manager.id(),
                 manager.nickname(),
-                inboundDelivery,
+                inboundDelivery.getId(),
+                inboundDelivery.getWarehouseId(),
+                inboundDelivery.getReceivingMode(),
+                inboundDelivery.getAsnNumber(),
                 request.gateNumber()
         );
 
@@ -83,7 +86,7 @@ public class GoodsReceiptService {
 
     @Transactional(readOnly = true)
     public GetOpenedReceiptsResponse findAllByStatus(UserPrincipal worker, GoodsReceiptStatus receiptStatus) {
-        List<GoodsReceiptDto> receipts = goodsReceiptRepositoryPort.findAllByStatusAndWarehouseId(receiptStatus, worker.warehouseId());
+        List<GoodsReceiptDto> receipts = goodsReceiptRepositoryPort.findAllDtosByStatusAndWarehouseId(receiptStatus, worker.warehouseId());
         return new GetOpenedReceiptsResponse(receipts);
     }
 

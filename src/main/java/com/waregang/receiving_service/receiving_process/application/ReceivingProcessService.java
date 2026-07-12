@@ -3,6 +3,7 @@ package com.waregang.receiving_service.receiving_process.application;
 import com.waregang.receiving_service.common.exception_handling.AppException;
 import com.waregang.receiving_service.common.exception_handling.error_code.ReceivingErrorCode;
 import com.waregang.receiving_service.inbound_delivery.application.InboundDeliveryService;
+import com.waregang.receiving_service.inbound_delivery.domain.model.InboundDelivery;
 import com.waregang.receiving_service.receiving_process.api.dto.*;
 import com.waregang.receiving_service.receiving_process.domain.model.*;
 import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedContentRepositoryJpa;
@@ -41,11 +42,14 @@ public class ReceivingProcessService {
         GoodsReceipt receipt = goodsReceiptService.findReceiptByIdWithLock(receiptId);
         receipt.ensureAvailableForJoin(worker);
 
+        // Fetch the related InboundDelivery to get data not stored in the receipt
+        InboundDelivery inboundDelivery = inboundDeliveryService.findById(receipt.getInboundDeliveryId());
+
         var newSession = WorkerReceivingSession.createWithBundledWorker(
                 worker,
                 receipt.getId(),
-                receipt.getReceivingMode(),
-                receipt.getInboundDelivery().getId()
+                inboundDelivery.getReceivingMode(),
+                inboundDelivery.getId()
         );
 
         WorkerReceivingSession savedSession= workerSessionRepository.save(newSession);

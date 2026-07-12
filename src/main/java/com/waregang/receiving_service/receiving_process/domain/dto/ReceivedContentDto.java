@@ -1,4 +1,4 @@
-package com.waregang.receiving_service.receiving_process.infrastructure.dto;
+package com.waregang.receiving_service.receiving_process.domain.dto;
 
 public record ReceivedContentDto(
         String containerLpn,

@@ -2,7 +2,7 @@ package com.waregang.receiving_service.receiving_process.domain.ports;
 
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceipt;
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceiptStatus;
-import com.waregang.receiving_service.receiving_process.infrastructure.dto.GoodsReceiptDto;
+import com.waregang.receiving_service.receiving_process.domain.dto.GoodsReceiptDto;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,7 +14,8 @@ public interface GoodsReceiptRepositoryPort {
     GoodsReceipt update(GoodsReceipt receipt);
 
     Optional<GoodsReceipt> findWithLockById(UUID receiptId);
-    List<GoodsReceiptDto> findAllByStatusAndWarehouseId(GoodsReceiptStatus receiptStatus, String warehouseId);
+
+    List<GoodsReceiptDto> findAllDtosByStatusAndWarehouseId(GoodsReceiptStatus receiptStatus, String warehouseId);
 
     Optional<GoodsReceipt> findById(UUID receiptId);
 }

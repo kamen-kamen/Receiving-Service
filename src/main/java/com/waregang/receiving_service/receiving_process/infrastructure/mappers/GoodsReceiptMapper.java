@@ -1,7 +1,7 @@
 package com.waregang.receiving_service.receiving_process.infrastructure.mappers;
 
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceipt;
-import com.waregang.receiving_service.receiving_process.infrastructure.dto.GoodsReceiptDto;
+import com.waregang.receiving_service.receiving_process.domain.dto.GoodsReceiptDto;
 import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.GoodsReceiptJpa;
 import org.springframework.stereotype.Component;
 
@@ -9,12 +9,15 @@ import org.springframework.stereotype.Component;
 public class GoodsReceiptMapper {
 
     public GoodsReceipt toDomain(GoodsReceiptJpa jpa) {
-        return GoodsReceipt.fromJpa(
+        // The fields receivingMode and asnNumber are not persisted in GoodsReceiptJpa,
+        // so they are not mapped here. They are only used for creating domain events.
+        return GoodsReceipt.reconstitute(
                 jpa.getId(),
                 jpa.getStatus(),
                 jpa.getGateNumber(),
                 jpa.getManagerId(),
-                jpa.getInboundDelivery()
+                jpa.getInboundDeliveryId(),
+                jpa.getWarehouseId()
         );
     }
 
@@ -24,7 +27,8 @@ public class GoodsReceiptMapper {
                 domain.getStatus(),
                 domain.getGateNumber(),
                 domain.getManagerId(),
-                domain.getInboundDelivery()
+                domain.getInboundDeliveryId(),
+                domain.getWarehouseId()
         );
     }
 
@@ -32,29 +36,5 @@ public class GoodsReceiptMapper {
         jpa.setStatus(domain.getStatus());
         jpa.setGateNumber(domain.getGateNumber());
         jpa.setManagerId(domain.getManagerId());
-    }
-
-    public GoodsReceiptDto toGoodsReceiptDto(GoodsReceipt receipt) {
-        return new GoodsReceiptDto(
-                receipt.getId(),
-                receipt.getStatus(),
-                receipt.getWarehouseId(),
-                receipt.getGateNumber(),
-                receipt.getManagerId(),
-                receipt.getReceivingMode(),
-                receipt.getInboundDelivery().getId()
-        );
-    }
-
-    public GoodsReceiptDto toGoodsReceiptDto(GoodsReceiptJpa jpa) {
-        return new GoodsReceiptDto(
-                jpa.getId(),
-                jpa.getStatus(),
-                jpa.getWarehouseId(),
-                jpa.getGateNumber(),
-                jpa.getManagerId(),
-                jpa.getReceivingMode(),
-                jpa.getInboundDelivery().getId()
-        );
     }
 }

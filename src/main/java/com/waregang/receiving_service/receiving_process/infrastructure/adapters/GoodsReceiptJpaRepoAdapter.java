@@ -5,7 +5,7 @@ import com.waregang.receiving_service.common.exception_handling.error_code.Recei
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceipt;
 import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceiptStatus;
 import com.waregang.receiving_service.receiving_process.domain.ports.GoodsReceiptRepositoryPort;
-import com.waregang.receiving_service.receiving_process.infrastructure.dto.GoodsReceiptDto;
+import com.waregang.receiving_service.receiving_process.domain.dto.GoodsReceiptDto;
 import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.GoodsReceiptJpa;
 import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.GoodsReceiptRepositoryJpa;
 import com.waregang.receiving_service.receiving_process.infrastructure.mappers.GoodsReceiptMapper;
@@ -54,12 +54,8 @@ public class GoodsReceiptJpaRepoAdapter implements GoodsReceiptRepositoryPort {
     }
 
     @Override
-    public List<GoodsReceiptDto> findAllByStatusAndWarehouseId(GoodsReceiptStatus receiptStatus, String warehouseId) {
-        var receipts = repositoryJpa.findAllByStatusAndWarehouseId(receiptStatus, warehouseId);
-
-        return receipts.stream()
-                .map(mapper::toGoodsReceiptDto)
-                .toList();
+    public List<GoodsReceiptDto> findAllDtosByStatusAndWarehouseId(GoodsReceiptStatus receiptStatus, String warehouseId) {
+        return repositoryJpa.findAllDtosByStatusAndWarehouseId(receiptStatus, warehouseId);
     }
 
     @Override

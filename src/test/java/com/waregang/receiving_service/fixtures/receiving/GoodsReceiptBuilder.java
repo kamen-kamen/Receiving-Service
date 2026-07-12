@@ -25,7 +25,10 @@ public class GoodsReceiptBuilder {
         return GoodsReceipt.open(
                 manager.id(),
                 manager.nickname(),
-                delivery,
+                delivery.getId(),
+                delivery.getWarehouseId(),
+                delivery.getReceivingMode(),
+                delivery.getAsnNumber(),
                 gateNumber
         );
     }

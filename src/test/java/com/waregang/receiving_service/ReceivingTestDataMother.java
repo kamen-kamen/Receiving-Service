@@ -54,8 +54,8 @@ public class ReceivingTestDataMother {
         return new GoodsReceiptBuilder(delivery);
     }
 
-    public static WorkerSessionBuilder aSession(GoodsReceipt receipt) {
-        return new WorkerSessionBuilder(receipt);
+    public static WorkerSessionBuilder aSession(GoodsReceipt receipt, InboundDelivery delivery) {
+        return new WorkerSessionBuilder(receipt, delivery);
     }
 
     // ==========================================
@@ -145,18 +145,23 @@ public class ReceivingTestDataMother {
             return GoodsReceipt.open(
                     manager.id(),
                     manager.nickname(),
-                    delivery,
+                    delivery.getId(),
+                    delivery.getWarehouseId(),
+                    delivery.getReceivingMode(),
+                    delivery.getAsnNumber(),
                     gateNumber
             );
         }
     }
 
     public static class WorkerSessionBuilder {
-        private UserPrincipal worker = aWorker().build();
+        private UserPrincipal worker;
         private final GoodsReceipt receipt;
+        private final InboundDelivery delivery;
 
-        public WorkerSessionBuilder(GoodsReceipt receipt) {
+        public WorkerSessionBuilder(GoodsReceipt receipt, InboundDelivery delivery) {
             this.receipt = receipt;
+            this.delivery = delivery;
             this.worker = aWorker().withWarehouseId(receipt.getWarehouseId()).build();
         }
 
@@ -166,8 +171,8 @@ public class ReceivingTestDataMother {
             return WorkerReceivingSession.createWithBundledWorker(
                     worker,
                     receipt.getId(),
-                    receipt.getReceivingMode(),
-                    receipt.getInboundDelivery().getId()
+                    delivery.getReceivingMode(),
+                    delivery.getId()
             );
         }
     }

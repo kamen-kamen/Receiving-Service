@@ -1,6 +1,5 @@
 package com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities;
 
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnitJpa;
 import com.waregang.receiving_service.receiving_process.domain.model.ReceivingMode;
 import com.waregang.receiving_service.receiving_process.domain.model.WorkerReceivingSessionStatus;
 import jakarta.persistence.*;
@@ -52,9 +51,8 @@ public class WorkerReceivingSessionJpa implements Persistable<UUID> {
 
     @Setter
     @Nullable
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "current_unit_id")
-    private ReceivedUnitJpa currentUnit;
+    @Column(name = "current_unit_id")
+    private UUID currentUnitId;
 
     private WorkerReceivingSessionJpa(
             UUID id,
@@ -64,7 +62,7 @@ public class WorkerReceivingSessionJpa implements Persistable<UUID> {
             WorkerReceivingSessionStatus status,
             ReceivingMode receivingMode,
             @Nullable String currentUnitLpnPath,
-            @Nullable ReceivedUnitJpa currentUnit
+            @Nullable UUID currentUnitId
     ) {
         this.id = id;
         this.workerId = workerId;
@@ -73,7 +71,7 @@ public class WorkerReceivingSessionJpa implements Persistable<UUID> {
         this.status = status;
         this.receivingMode = receivingMode;
         this.currentUnitLpnPath = currentUnitLpnPath;
-        this.currentUnit = currentUnit;
+        this.currentUnitId = currentUnitId;
     }
 
     public static WorkerReceivingSessionJpa toJpaEntity(
@@ -84,7 +82,7 @@ public class WorkerReceivingSessionJpa implements Persistable<UUID> {
             WorkerReceivingSessionStatus status,
             ReceivingMode receivingMode,
             String currentUnitLpnPath,
-            ReceivedUnitJpa currentUnit
+            UUID currentUnitId
     ) {
         return new WorkerReceivingSessionJpa(
                 id,
@@ -94,7 +92,7 @@ public class WorkerReceivingSessionJpa implements Persistable<UUID> {
                 status,
                 receivingMode,
                 currentUnitLpnPath,
-                currentUnit
+                currentUnitId
         );
     }
 
