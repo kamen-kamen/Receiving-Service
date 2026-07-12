@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class WorkerReceivingSessionMapper {
 
     public WorkerReceivingSession toDomain(WorkerReceivingSessionJpa jpa) {
-        return WorkerReceivingSession.toDomain(
+        return WorkerReceivingSession.reconstitute(
                 jpa.getId(),
                 jpa.getWorkerId(),
                 jpa.getReceiptId(),

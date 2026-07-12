@@ -1,8 +1,6 @@
-package com.waregang.receiving_service.receiving_process.domain.model;
+package com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities;
 
 import com.waregang.receiving_service.common.IdGenerator;
-import com.waregang.receiving_service.receiving_process.api.dto.ScanHandlingUnitRequest;
-import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.WorkerReceivingSessionJpa;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -61,31 +59,19 @@ public class ReceivedUnitJpa implements Persistable<UUID> {
     @Fetch(FetchMode.SUBSELECT)
     private final Set<ReceivedContentJpa> contents = new HashSet<>();
 
-    private ReceivedUnitJpa(
+    public ReceivedUnitJpa(
+            UUID id,
             String lpn,
             @Nullable
             ReceivedUnitJpa parentUnit,
             UUID workerSessionId,
             UUID receiptId
     ) {
-        this.id = IdGenerator.generate();
+        this.id = id;
         this.lpn = lpn;
         this.parentUnit = parentUnit;
         this.workerSessionId = workerSessionId;
         this.receiptId = receiptId;
-    }
-
-    public static ReceivedUnitJpa assignToParentUnit(
-            ScanHandlingUnitRequest scanRequest,
-            WorkerReceivingSession session,
-            ReceivedUnitJpa proxyParent
-    ) {
-        return new ReceivedUnitJpa(
-                scanRequest.lpn(),
-                proxyParent,
-                session.getId(),
-                session.getReceiptId()
-        );
     }
 
     @Override
@@ -113,4 +99,4 @@ public class ReceivedUnitJpa implements Persistable<UUID> {
     void markNotNew() {
         this.isNew = false;
     }
-    }
+}

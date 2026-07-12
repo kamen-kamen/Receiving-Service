@@ -52,7 +52,7 @@ public class GoodsReceipt extends AggregateRoot {
         return receipt;
     }
 
-    public static GoodsReceipt fromJpa(
+    public static GoodsReceipt reconstitute(
             UUID id,
             GoodsReceiptStatus status,
             String gateNumber,

@@ -1,4 +1,4 @@
-package com.waregang.receiving_service.inbound_delivery.domain.model;
+package com.waregang.receiving_service.receiving_process.domain.model;
 
 import com.waregang.receiving_service.common.IdGenerator;
 import lombok.AccessLevel;
@@ -10,22 +10,26 @@ import java.util.UUID;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class Content {
+public class ReceivedContent {
 
     private UUID id;
     private String sku;
-    private Integer quantity;
+    private Long quantity;
     private UUID containerUnitId;
 
-    public Content(String sku, int quantity, UUID containerUnitId) {
+    private ReceivedContent(String sku, Long quantity, UUID containerUnitId) {
         this.id = IdGenerator.generate();
         this.sku = sku;
         this.quantity = quantity;
         this.containerUnitId = containerUnitId;
     }
-    
-    public static Content reconstitute(UUID id, String sku, Integer quantity, UUID containerUnitId) {
-        Content content = new Content();
+
+    public static ReceivedContent create(String sku, Long quantity, UUID containerUnitId) {
+        return new ReceivedContent(sku, quantity, containerUnitId);
+    }
+
+    public static ReceivedContent reconstitute(UUID id, String sku, Long quantity, UUID containerUnitId) {
+        ReceivedContent content = new ReceivedContent();
         content.id = id;
         content.sku = sku;
         content.quantity = quantity;
@@ -41,7 +45,7 @@ public class Content {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Content other)) return false;
-        return this.id != null && this.id.equals(other.id);
+        if (!(o instanceof ReceivedContent other)) return false;
+        return Objects.equals(this.id, other.id);
     }
 }

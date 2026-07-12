@@ -1,74 +1,60 @@
 package com.waregang.receiving_service.inbound_delivery.domain.model;
 
 import com.waregang.receiving_service.common.IdGenerator;
-import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.jspecify.annotations.Nullable;
-import org.springframework.data.domain.Persistable;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PACKAGE)
-@Entity
-@Table(name = "handling_units")
-public class HandlingUnit implements Persistable<UUID> {
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public class HandlingUnit {
 
-    @Id
-    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
     private UUID id;
-
-    @Column(name = "lpn", unique = true, nullable = false)
     private String lpn;
-
     @Nullable
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_unit_id")
-    private HandlingUnit parentUnit;
-
-    @OneToMany(
-            mappedBy = "parentUnit",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true)
+    private UUID parentUnitId;
     private final Set<HandlingUnit> childUnits = new HashSet<>();
-
-    @Enumerated(value = EnumType.STRING)
-    @Column(name = "type", nullable = false)
     private HandlingUnitType type;
-
-    @OneToMany(
-            mappedBy = "containerUnit",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true)
     private final Set<Content> contents = new HashSet<>();
+    private UUID inboundDeliveryId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "inbound_delivery_id", nullable = false)
-    private InboundDelivery inboundDelivery;
-
-    private HandlingUnit(String lpn, InboundDelivery inboundDelivery) {
+    private HandlingUnit(String lpn, UUID inboundDeliveryId) {
         this.id = IdGenerator.generate();
         this.lpn = lpn;
         this.type = HandlingUnitType.DEFAULT;
-        this.inboundDelivery = inboundDelivery;
+        this.inboundDeliveryId = inboundDeliveryId;
     }
 
-    public static HandlingUnit create(String lpn, InboundDelivery inboundDelivery) {
-        return new HandlingUnit(lpn, inboundDelivery);
+    public static HandlingUnit create(String lpn, UUID inboundDeliveryId) {
+        return new HandlingUnit(lpn, inboundDeliveryId);
+    }
+    
+    public static HandlingUnit reconstitute(UUID id, String lpn, @Nullable UUID parentUnitId, HandlingUnitType type, UUID inboundDeliveryId) {
+        HandlingUnit unit = new HandlingUnit();
+        unit.id = id;
+        unit.lpn = lpn;
+        unit.parentUnitId = parentUnitId;
+        unit.type = type;
+        unit.inboundDeliveryId = inboundDeliveryId;
+        return unit;
     }
 
     public void addChild(HandlingUnit child) {
         this.childUnits.add(child);
-        child.parentUnit = this;
+        child.parentUnitId = this.id;
     }
 
     public void fillWithContent(String sku, int quantity) {
         this.contents.add(new Content(
                 sku,
                 quantity,
-                this
+                this.id
         ));
     }
 
@@ -82,19 +68,5 @@ public class HandlingUnit implements Persistable<UUID> {
         if (this == o) return true;
         if (!(o instanceof HandlingUnit other)) return false;
         return this.id != null && this.id.equals(other.id);
-    }
-
-    @Transient
-    private boolean isNew = true;
-
-    @Override
-    public boolean isNew() {
-        return isNew;
-    }
-
-    @PostPersist
-    @PostLoad
-    void markNotNew() {
-        this.isNew = false;
     }
 }

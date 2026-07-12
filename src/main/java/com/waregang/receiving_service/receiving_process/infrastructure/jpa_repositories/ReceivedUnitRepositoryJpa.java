@@ -1,6 +1,6 @@
 package com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories;
 
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnitJpa;
+import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.ReceivedUnitJpa;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

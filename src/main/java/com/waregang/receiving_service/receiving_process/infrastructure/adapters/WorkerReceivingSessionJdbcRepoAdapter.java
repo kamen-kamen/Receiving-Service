@@ -29,7 +29,7 @@ public class WorkerReceivingSessionJdbcRepoAdapter implements WorkerReceivingSes
         String currentUnitIdStr = rs.getString("current_unit_id");
         UUID currentUnitId = currentUnitIdStr != null ? UUID.fromString(currentUnitIdStr) : null;
 
-        return WorkerReceivingSession.toDomain(
+        return WorkerReceivingSession.reconstitute(
                 UUID.fromString(rs.getString("id")),
                 UUID.fromString(rs.getString("worker_id")),
                 UUID.fromString(rs.getString("receipt_id")),

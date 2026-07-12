@@ -10,12 +10,16 @@ import com.waregang.receiving_service.receiving_process.api.dto.ScanHandlingUnit
 import com.waregang.receiving_service.receiving_process.api.dto.StartReceivingRequest;
 import com.waregang.receiving_service.receiving_process.application.GoodsReceiptService;
 import com.waregang.receiving_service.receiving_process.application.ReceivingProcessService;
-import com.waregang.receiving_service.receiving_process.domain.model.*;
+import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceipt;
+import com.waregang.receiving_service.receiving_process.domain.model.GoodsReceiptStatus;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedContent;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnit;
+import com.waregang.receiving_service.receiving_process.domain.model.WorkerReceivingSession;
+import com.waregang.receiving_service.receiving_process.domain.model.WorkerReceivingSessionStatus;
 import com.waregang.receiving_service.receiving_process.domain.ports.GoodsReceiptRepositoryPort;
+import com.waregang.receiving_service.receiving_process.domain.ports.ReceivedContentRepositoryPort;
+import com.waregang.receiving_service.receiving_process.domain.ports.ReceivedUnitRepositoryPort;
 import com.waregang.receiving_service.receiving_process.domain.ports.WorkerReceivingSessionRepositoryPort;
-import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedContentRepositoryJpa;
-import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedUnitRepositoryJpa;
-import com.waregang.receiving_service.receiving_process.infrastructure.jpa_entities.WorkerReceivingSessionJpa;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,8 +35,8 @@ public class ReceivingFullFlowIT extends BaseIT {
     @Autowired private InboundDeliveryRepository inboundDeliveryRepository;
     @Autowired private GoodsReceiptRepositoryPort goodsReceiptRepositoryPort;
     @Autowired private WorkerReceivingSessionRepositoryPort workerReceivingSessionRepositoryPort;
-    @Autowired private ReceivedUnitRepositoryJpa receivedUnitRepositoryJpa;
-    @Autowired private ReceivedContentRepositoryJpa receivedContentRepositoryJpa;
+    @Autowired private ReceivedUnitRepositoryPort receivedUnitRepository;
+    @Autowired private ReceivedContentRepositoryPort receivedContentRepository;
 
     @Test
     @DisplayName("Full Happy Path: Open Receipt -> Join Worker -> Scan Nested Tree -> Close")
@@ -94,20 +98,19 @@ public class ReceivingFullFlowIT extends BaseIT {
         assertThat(session.getCurrentUnitLpnPath()).isNull();
 
         // Проверяем, что юниты сохранились и иерархия верна
-        ReceivedUnitJpa savedPallet = receivedUnitRepositoryJpa.findByLpn("PALLET-01")
-                .orElseThrow(() -> new AssertionError("Паллета не найдена в БД"));
-        ReceivedUnitJpa savedBox = receivedUnitRepositoryJpa.findByLpn("BOX-01")
-                .orElseThrow(() -> new AssertionError("Коробка не найдена в БД"));
+        List<ReceivedUnit> allUnits = receivedUnitRepository.findAll();
+        ReceivedUnit savedPallet = allUnits.stream().filter(u -> u.getLpn().equals("PALLET-01")).findFirst().orElseThrow();
+        ReceivedUnit savedBox = allUnits.stream().filter(u -> u.getLpn().equals("BOX-01")).findFirst().orElseThrow();
 
         //  BOX-01 должен ссылаться на PALLET-01
-        assertThat(savedBox.getParentUnit()).isNotNull();
-        assertThat(savedBox.getParentUnit().getId()).isEqualTo(savedPallet.getId());
+        assertThat(savedBox.getParentUnitId()).isNotNull();
+        assertThat(savedBox.getParentUnitId()).isEqualTo(savedPallet.getId());
 
         // Проверяем контент
-        List<ReceivedContentJpa> contents = receivedContentRepositoryJpa.findAll();
+        List<ReceivedContent> contents = receivedContentRepository.findAll();
         assertThat(contents).hasSize(1);
         assertThat(contents.getFirst().getSku()).isEqualTo("SKU-123");
         assertThat(contents.getFirst().getQuantity()).isEqualTo(100);
-        assertThat(contents.getFirst().getContainerUnit().getId()).isEqualTo(savedBox.getId());
+        assertThat(contents.getFirst().getContainerUnitId()).isEqualTo(savedBox.getId());
     }
 }

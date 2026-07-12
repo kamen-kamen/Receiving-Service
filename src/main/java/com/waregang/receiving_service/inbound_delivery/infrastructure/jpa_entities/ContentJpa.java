@@ -1,9 +1,10 @@
-package com.waregang.receiving_service.receiving_process.domain.model;
+package com.waregang.receiving_service.inbound_delivery.infrastructure.jpa_entities;
 
 import com.waregang.receiving_service.common.IdGenerator;
-import com.waregang.receiving_service.receiving_process.api.dto.ScanContentRequest;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Persistable;
 
 import java.util.Objects;
@@ -13,10 +14,9 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 
 @Entity
-@Table(name = "received_contents"
-//        @UniqueConstraint(name = "uk_unit_sku", columnNames = {"container_unit_id", "sku"})
-)
-public class ReceivedContentJpa implements Persistable<UUID> {
+@Table(name = "contents")
+public class ContentJpa implements Persistable<UUID> {
+
     @Id
     @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
     private UUID id;
@@ -25,24 +25,17 @@ public class ReceivedContentJpa implements Persistable<UUID> {
     private String sku;
 
     @Column(name = "quantity", nullable = false)
-    private Long quantity;
+    private Integer quantity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "container_unit_id")
-    private ReceivedUnitJpa containerUnit;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "container_unit_id", nullable = false)
+    private HandlingUnitJpa containerUnit;
 
-    private ReceivedContentJpa(String sku, Long quantity, ReceivedUnitJpa containerUnit) {
+    public ContentJpa(String sku, int quantity, HandlingUnitJpa containerUnit) {
         this.id = IdGenerator.generate();
         this.sku = sku;
         this.quantity = quantity;
         this.containerUnit = containerUnit;
-    }
-
-    public static ReceivedContentJpa assignToContainer(
-            ScanContentRequest scanRequest,
-            ReceivedUnitJpa containerUnit
-    ) {
-        return new ReceivedContentJpa(scanRequest.sku(), scanRequest.quantity(), containerUnit);
     }
 
     @Override
@@ -53,8 +46,8 @@ public class ReceivedContentJpa implements Persistable<UUID> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ReceivedContentJpa other)) return false;
-        return Objects.equals(this.id, other.id);
+        if (!(o instanceof ContentJpa other)) return false;
+        return this.id != null && this.id.equals(other.id);
     }
 
     @Transient

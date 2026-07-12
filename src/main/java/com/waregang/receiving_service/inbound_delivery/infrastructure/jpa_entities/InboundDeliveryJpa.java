@@ -1,34 +1,58 @@
-package com.waregang.receiving_service.inbound_delivery.domain.model;
+package com.waregang.receiving_service.inbound_delivery.infrastructure.jpa_entities;
 
 import com.waregang.receiving_service.common.IdGenerator;
 import com.waregang.receiving_service.common.exception_handling.AppException;
 import com.waregang.receiving_service.common.exception_handling.error_code.InboundDeliveryErrorCode;
 import com.waregang.receiving_service.common.exception_handling.error_code.ReceivingErrorCode;
+import com.waregang.receiving_service.inbound_delivery.domain.model.InboundDeliveryStatus;
 import com.waregang.receiving_service.receiving_process.domain.model.ReceivingMode;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.springframework.data.domain.AbstractAggregateRoot;
+import org.springframework.data.domain.Persistable;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class InboundDelivery extends AbstractAggregateRoot<InboundDelivery> {
+@NoArgsConstructor(access = AccessLevel.PACKAGE)
 
+@Entity
+@Table(name = "inbound_deliveries")
+public class InboundDeliveryJpa extends AbstractAggregateRoot<InboundDeliveryJpa> implements Persistable<UUID> {
+
+    @Id
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
     private UUID id;
-    private String externalId;
-    private String asnNumber;
-    private String warehouseId;
-    private ReceivingMode receivingMode;
-    private InboundDeliveryStatus status;
-    private final Set<HandlingUnit> handlingUnits = new HashSet<>();
-    private Integer version;
 
-    private InboundDelivery(String externalId, String asnNumber, String warehouseId) {
+    @Column(name = "external_id", updatable = false, nullable = false, unique = true)
+    private String externalId;
+
+    @Column(name = "asn_number", updatable = false, nullable = false, unique = true)
+    private String asnNumber;
+
+    @Column(name = "warehouse_id", updatable = false, nullable = false)
+    private String warehouseId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "receiving_mode", nullable = false)
+    private ReceivingMode receivingMode;
+
+    @Column(name = "status", nullable = false)
+    @Enumerated(value = EnumType.STRING)
+    private InboundDeliveryStatus status;
+
+    @OneToMany(
+            mappedBy = "inboundDelivery",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    @Fetch(FetchMode.SUBSELECT)
+    private final Set<HandlingUnitJpa> handlingUnits = new HashSet<>();
+
+    private InboundDeliveryJpa(String externalId, String asnNumber, String warehouseId) {
         this.id = IdGenerator.generate();
         this.externalId = externalId;
         this.status = InboundDeliveryStatus.EXPECTED;
@@ -37,24 +61,12 @@ public class InboundDelivery extends AbstractAggregateRoot<InboundDelivery> {
         this.warehouseId = warehouseId;
     }
 
-    public static InboundDelivery create(String externalId, String asnNumber, String warehouseId) {
-        return new InboundDelivery(externalId, asnNumber, warehouseId);
-    }
-    
-    public static InboundDelivery reconstitute(UUID id, String externalId, String asnNumber, String warehouseId, ReceivingMode receivingMode, InboundDeliveryStatus status, Integer version) {
-        InboundDelivery delivery = new InboundDelivery();
-        delivery.id = id;
-        delivery.externalId = externalId;
-        delivery.asnNumber = asnNumber;
-        delivery.warehouseId = warehouseId;
-        delivery.receivingMode = receivingMode;
-        delivery.status = status;
-        delivery.version = version;
-        return delivery;
+    public static InboundDeliveryJpa create(String externalId, String asnNumber, String warehouseId) {
+        return new InboundDeliveryJpa(externalId, asnNumber, warehouseId);
     }
 
-    public void addHandlingUnit(HandlingUnit unit) {
-        if (unit != null) {
+    public void addHandlingUnit(HandlingUnitJpa unit) {
+        if (unit != null && unit.getInboundDelivery() == this) {
             this.handlingUnits.add(unit);
         }
     }
@@ -95,7 +107,24 @@ public class InboundDelivery extends AbstractAggregateRoot<InboundDelivery> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof InboundDelivery other)) return false;
+        if (!(o instanceof InboundDeliveryJpa other)) return false;
         return this.id != null && this.id.equals(other.id);
+    }
+
+    @Version
+    private Integer version;
+
+    @Transient
+    private boolean isNew = true;
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    @PostPersist
+    @PostLoad
+    void markNotNew() {
+        this.isNew = false;
     }
 }

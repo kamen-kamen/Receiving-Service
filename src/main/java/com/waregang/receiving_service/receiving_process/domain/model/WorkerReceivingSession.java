@@ -51,7 +51,7 @@ public class WorkerReceivingSession extends AggregateRoot {
         return new WorkerReceivingSession(user, receiptId, receivingMode, inboundDeliveryId);
     }
     
-    public static WorkerReceivingSession toDomain(
+    public static WorkerReceivingSession reconstitute(
             UUID id,
             UUID workerId,
             UUID receiptId,
