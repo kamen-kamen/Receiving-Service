@@ -15,4 +15,5 @@ public interface WorkerReceivingSessionRepositoryPort {
     WorkerReceivingSession update(WorkerReceivingSession session);
     Optional<WorkerReceivingSession> findByWorkerIdAndStatus(UUID id, WorkerReceivingSessionStatus workerReceivingSessionStatus);
     Set<WorkerReceivingSession> findAll();
+    void flush();
 }

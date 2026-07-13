@@ -74,7 +74,7 @@ class InboundDeliveryUnitTest {
         var palletRequest = new CreateUnitRequest("PALLET", "LPN-PALLET", null);
         var box1Request = new CreateUnitRequest("BOX", "LPN-BOX-1", "LPN-PALLET");
 
-        var contentRequest = new CreateContentRequest("LPN-BOX-1", "SKU-123", 10);
+        var contentRequest = new CreateContentRequest("LPN-BOX-1", "SKU-123", 10L);
 
         return new CreateDeliveryRequest(
                 "EXT-ID",

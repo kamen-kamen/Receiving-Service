@@ -17,7 +17,7 @@ public class DeliveryMother {
         HandlingUnit pallet = HandlingUnit.create("PALLET-01", delivery);
         HandlingUnit box = HandlingUnit.create("BOX-01", delivery);
         
-        box.fillWithContent("SKU-123", 100);
+        box.fillWithContent("SKU-123", 100L);
         pallet.addChild(box);
         delivery.addHandlingUnit(pallet);
         

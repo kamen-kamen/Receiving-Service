@@ -23,7 +23,7 @@ public class Content {
         this.quantity = quantity;
         this.containerUnitId = containerUnitId;
     }
-    
+
     public static Content reconstitute(UUID id, String sku, Integer quantity, UUID containerUnitId) {
         Content content = new Content();
         content.id = id;
