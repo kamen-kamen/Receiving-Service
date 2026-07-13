@@ -10,6 +10,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.springframework.data.domain.AbstractAggregateRoot;
@@ -17,7 +18,7 @@ import org.springframework.data.domain.Persistable;
 
 import java.util.*;
 
-@Getter
+@Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 
 @Entity

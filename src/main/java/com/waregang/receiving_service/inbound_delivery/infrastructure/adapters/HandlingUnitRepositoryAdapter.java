@@ -1,7 +1,7 @@
 package com.waregang.receiving_service.inbound_delivery.infrastructure.adapters;
 
 import com.waregang.receiving_service.inbound_delivery.domain.ports.HandlingUnitRepositoryPort;
-import com.waregang.receiving_service.inbound_delivery.infrastructure.HandlingUnitRepositoryJpa;
+import com.waregang.receiving_service.inbound_delivery.infrastructure.jpa_repositories.HandlingUnitRepositoryJpa;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 

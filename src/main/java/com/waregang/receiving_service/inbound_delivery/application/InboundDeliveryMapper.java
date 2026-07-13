@@ -56,7 +56,7 @@ public class InboundDeliveryMapper {
             Map<String, List<CreateContentRequest>> contentsByParent
     ) {
         // Создаем текущий HandlingUnit, сразу связывая его с поставкой
-        HandlingUnit currentUnit = HandlingUnit.create(currentRequest.lpn(), delivery);
+        HandlingUnit currentUnit = HandlingUnit.create(currentRequest.lpn(), delivery.getId());
 
         // Добавляем вложенный контент, используя правильное имя метода
         contentsByParent.getOrDefault(currentRequest.lpn(), Collections.emptyList())

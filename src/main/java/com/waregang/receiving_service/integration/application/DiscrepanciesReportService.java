@@ -1,8 +1,8 @@
 package com.waregang.receiving_service.integration.application;
 
-import com.waregang.receiving_service.inbound_delivery.infrastructure.InboundDeliveryRepository;
+import com.waregang.receiving_service.inbound_delivery.domain.ports.InboundDeliveryRepositoryPort;
 import com.waregang.receiving_service.receiving_process.domain.event.ClosedGoodsReceiptEvent;
-import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedContentRepositoryJpa;
+import com.waregang.receiving_service.receiving_process.domain.ports.ReceivedContentRepositoryPort;
 import com.waregang.receiving_service.integration.infrastrusture.dto.DiscrepanciesReport;
 import com.waregang.receiving_service.integration.infrastrusture.dto.DiscrepancyLine;
 import com.waregang.receiving_service.integration.infrastrusture.dto.DiscrepancyType;
@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 @Service
 public class DiscrepanciesReportService {
     private final DiscrepanciesReportPort port;
-    private final InboundDeliveryRepository deliveryRepository;
-    private final ReceivedContentRepositoryJpa contentRepository;
+    private final InboundDeliveryRepositoryPort deliveryRepository;
+    private final ReceivedContentRepositoryPort contentRepository;
 
     @Transactional(readOnly = true)
     public void processClosedEvent(ClosedGoodsReceiptEvent event) {
@@ -43,13 +43,19 @@ public class DiscrepanciesReportService {
             long expectedQty = expected.getOrDefault(sku, 0L);
             long actualQty = actual.getOrDefault(sku, 0L);
 
-            if (expectedQty > 0 && actualQty == 0) {
-                discrepancies.add(recordDiscrepancy(sku, expectedQty, actualQty));
-            } else if (expectedQty == 0 && actualQty > 0) {
-                discrepancies.add(recordSubstitution(sku, expectedQty, actualQty));
-            } else if (expectedQty != actualQty) {
-                discrepancies.add(recordDiscrepancy(sku, expectedQty, actualQty));
-            }
+            if (isMissing(expectedQty, actualQty))
+                discrepancies.add(
+                        recordDiscrepancy(sku, expectedQty, actualQty)
+                );
+            else if (isSubstitution(expectedQty, actualQty))
+                discrepancies.add(
+                        recordSubstitution(sku, expectedQty, actualQty)
+                );
+            else if (expectedQty != actualQty)
+                discrepancies.add(
+                        recordDiscrepancy(sku, expectedQty, actualQty)
+                );
+
         });
 
         if (!discrepancies.isEmpty()) {
@@ -79,5 +85,13 @@ public class DiscrepanciesReportService {
                 actual,
                 type
         );
+    }
+
+    private boolean isMissing(long expected, long actual) {
+        return expected > 0 && actual == 0;
+    }
+
+    private boolean isSubstitution(long expected, long actual) {
+        return expected == 0 && actual > 0;
     }
 }

@@ -43,4 +43,9 @@ public class ReceivedContentRepositoryAdapter implements ReceivedContentReposito
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<SkuQuantityDto> findActualSkuQuantitiesByReceiptId(UUID receiptId) {
+        return jpaRepository.findActualSkuQuantitiesByReceiptId(receiptId);
+    }
 }

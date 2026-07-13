@@ -27,7 +27,12 @@ public class InboundDeliveryService {
 
     @Transactional
     public CreateDeliveryResponse createDelivery(CreateDeliveryRequest request) {
-        InboundDelivery delivery = InboundDelivery.create(request.externalId(), request.asnNumber(), request.warehouseId());
+        InboundDelivery delivery = InboundDelivery.create(
+                request.externalId(),
+                request.asnNumber(),
+                request.warehouseId()
+        );
+
         inboundDeliveryRepositoryPort.save(delivery);
 
         return new CreateDeliveryResponse(delivery.getId());
@@ -72,6 +77,7 @@ public class InboundDeliveryService {
                          .with("inbound_delivery_id", event.inboundDeliveryId()));
 
          delivery.close();
-         inboundDeliveryRepositoryPort.save(delivery);
+
+         inboundDeliveryRepositoryPort.update(delivery);
     }
 }

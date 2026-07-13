@@ -1,4 +1,4 @@
-package com.waregang.receiving_service.inbound_delivery.infrastructure;
+package com.waregang.receiving_service.inbound_delivery.infrastructure.jpa_repositories;
 
 import com.waregang.receiving_service.inbound_delivery.infrastructure.jpa_entities.HandlingUnitJpa;
 import org.springframework.data.jpa.repository.JpaRepository;

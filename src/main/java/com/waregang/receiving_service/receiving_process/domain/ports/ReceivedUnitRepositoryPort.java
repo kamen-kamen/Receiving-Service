@@ -10,4 +10,5 @@ public interface ReceivedUnitRepositoryPort {
     ReceivedUnit save(ReceivedUnit unit);
     Optional<ReceivedUnit> findById(UUID id);
     List<ReceivedUnit> findAll();
+    List<ReceivedUnit> findAllRootUnitsByWorkerSessionId(UUID workerSessionId);
 }

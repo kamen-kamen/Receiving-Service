@@ -38,8 +38,7 @@ The service automates the "happy path" of a typical warehouse receiving process:
 
 -   **Rich Domain Model**, where entities (`InboundDelivery`, `GoodsReceipt`, `WorkerReceivingSession`) encapsulate business rules and invariants. 
 
--   **Hexagonal Architecture (Ports & Adapters)**: The application core (domain and application layers) is decoupled from infrastructure concerns. For example, the service uses a `DiscrepanciesReportPort` interface to send reports, with a concrete `KafkaAdapter` in the infrastructure layer providing the implementation. This makes the core independent of external technologies like Kafka.
-
+-   **Hexagonal Architecture (Ports & Adapters)**: The application core (domain and application layers) is decoupled from infrastructure concerns.
 -   **Event-Driven Communication**: The service publishes domain events to a Kafka topic upon completion of key business processes (e.g., `goods.received.v1`). This decouples the Receiving service from downstream consumers.
 
 -   **Layered Structure**: The code is organized into four distinct layers:

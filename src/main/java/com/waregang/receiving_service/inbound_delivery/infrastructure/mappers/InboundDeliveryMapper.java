@@ -38,4 +38,12 @@ public class InboundDeliveryMapper {
         domain.getHandlingUnits().forEach(huDomain -> jpa.addHandlingUnit(handlingUnitMapper.toJpa(huDomain)));
         return jpa;
     }
+
+    public void updateJpaFromDomain(InboundDeliveryJpa jpa, InboundDelivery domain) {
+        jpa.setStatus(domain.getStatus());
+        jpa.setWarehouseId(domain.getWarehouseId());
+        // collections are accessed through their own repos bc now no need
+        // to sync collections when saving this entity
+    }
 }
+

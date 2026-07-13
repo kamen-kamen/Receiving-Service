@@ -51,4 +51,11 @@ public class ReceivedUnitRepositoryAdapter implements ReceivedUnitRepositoryPort
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<ReceivedUnit> findAllRootUnitsByWorkerSessionId(UUID workerSessionId) {
+        return jpaRepository.findAllByWorkerSessionIdAndParentUnitIsNull(workerSessionId).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
+    }
 }

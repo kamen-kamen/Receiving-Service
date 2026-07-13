@@ -1,8 +1,8 @@
 package com.waregang.receiving_service.integration.application;
 
 import com.waregang.receiving_service.receiving_process.domain.event.WorkerSessionClosedEvent;
-import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnitJpa;
-import com.waregang.receiving_service.receiving_process.infrastructure.jpa_repositories.ReceivedUnitRepositoryJpa;
+import com.waregang.receiving_service.receiving_process.domain.model.ReceivedUnit;
+import com.waregang.receiving_service.receiving_process.domain.ports.ReceivedUnitRepositoryPort;
 import com.waregang.receiving_service.integration.infrastrusture.dto.ForwardPutAwayRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,13 +19,13 @@ import java.util.List;
 public class InventoryIntegrationService {
 
     private final InventoryPutAwayPort putAwayPort;
-    private final ReceivedUnitRepositoryJpa receivedUnitRepositoryJpa;
+    private final ReceivedUnitRepositoryPort receivedUnitRepository;
     private final PutAwayMapper putAwayMapper;
 
     @Transactional(readOnly = true)
     public void submitForPutAway(WorkerSessionClosedEvent event) {
-        List<ReceivedUnitJpa> rootUnits = receivedUnitRepositoryJpa
-                .findAllByWorkerSessionIdAndParentUnitIsNull(event.workerSessionId());
+        List<ReceivedUnit> rootUnits = receivedUnitRepository
+                .findAllRootUnitsByWorkerSessionId(event.workerSessionId());
 
         if (CollectionUtils.isEmpty(rootUnits)) {
             log.warn("[PutAway] No root units found for workerSessionId={}", event.workerSessionId());
