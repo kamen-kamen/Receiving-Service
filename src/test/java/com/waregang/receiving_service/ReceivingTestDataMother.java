@@ -122,7 +122,7 @@ public class ReceivingTestDataMother {
         }
 
         public InboundDelivery build() {
-            box.fillWithContent("SKU-123", 100);
+            box.fillWithContent("SKU-123", 100L);
             pallet.addChild(box);
             delivery.addHandlingUnit(pallet);
             return delivery;

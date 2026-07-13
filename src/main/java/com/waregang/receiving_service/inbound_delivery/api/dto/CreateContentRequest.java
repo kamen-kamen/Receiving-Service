@@ -11,6 +11,6 @@ public record CreateContentRequest(
         String sku,
 
         @Min(1)
-        int quantity
+        Long quantity
 ) {
 }

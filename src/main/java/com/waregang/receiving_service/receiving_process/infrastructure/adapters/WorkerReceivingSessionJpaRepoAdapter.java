@@ -101,4 +101,9 @@ public class WorkerReceivingSessionJpaRepoAdapter implements WorkerReceivingSess
                 .map(mapper::toDomain)
                 .collect(Collectors.toSet());
     }
+
+    @Override
+    public void flush() {
+        repositoryJpa.flush();
+    }
 }

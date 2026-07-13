@@ -34,7 +34,7 @@ public class HandlingUnit {
     public static HandlingUnit create(String lpn, UUID inboundDeliveryId) {
         return new HandlingUnit(lpn, inboundDeliveryId);
     }
-    
+
     public static HandlingUnit reconstitute(UUID id, String lpn, @Nullable UUID parentUnitId, HandlingUnitType type, UUID inboundDeliveryId) {
         HandlingUnit unit = new HandlingUnit();
         unit.id = id;

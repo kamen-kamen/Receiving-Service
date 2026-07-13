@@ -109,7 +109,7 @@ class InboundDeliveryValidationIT extends BaseIT {
 
     private String givenRequestWithContentInNonExistingUnit() {
         var unitRequest = new CreateUnitRequest("PALLET", "LPN-001", null);
-        var contentRequest = new CreateContentRequest("LPN-999", "SKU-123", 10); // LPN-999 does not exist
+        var contentRequest = new CreateContentRequest("LPN-999", "SKU-123", 10L); // LPN-999 does not exist
 
         var request = new CreateDeliveryRequest(
                 "EXT-ID-1",
@@ -125,7 +125,7 @@ class InboundDeliveryValidationIT extends BaseIT {
     private String givenRequestWithNonExistingParentUnit() {
         var childUnit = new CreateUnitRequest("BOX", "LPN-002", "LPN-999"); // LPN-999 does not exist
         var parentUnit = new CreateUnitRequest("PALLET", "LPN-001", null);
-        var contentRequest = new CreateContentRequest("LPN-002", "SKU-123", 10);
+        var contentRequest = new CreateContentRequest("LPN-002", "SKU-123", 10L);
 
         var request = new CreateDeliveryRequest(
                 "EXT-ID-2",
